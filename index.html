@@ -7893,6 +7893,63 @@ const CONFIG = {
 
 const CACHE_KEY = "crm_data_cache";
 
+// ─── UTILITY & FORMATTING HELPERS (MUST BE DECLARED FIRST) ───────────────────
+function makeJsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function formatDate(dateVal) {
+  if (!dateVal || dateVal === "") return "";
+  if (typeof dateVal === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.substring(0, 10);
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "";
+    return formatDateObj(d);
+  }
+  if (dateVal instanceof Date) {
+    if (isNaN(dateVal.getTime())) return "";
+    return formatDateObj(dateVal);
+  }
+  return "";
+}
+
+function formatDateTime(dateTimeVal) {
+  if (!dateTimeVal || dateTimeVal === "") return "";
+  if (typeof dateTimeVal === 'string') {
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(dateTimeVal)) return dateTimeVal.substring(0, 19);
+    const d = new Date(dateTimeVal);
+    if (isNaN(d.getTime())) return "";
+    return formatDateTimeObj(d);
+  }
+  if (dateTimeVal instanceof Date) {
+    if (isNaN(dateTimeVal.getTime())) return "";
+    return formatDateTimeObj(dateTimeVal);
+  }
+  return "";
+}
+
+function formatDateObj(d) {
+  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  const istDate = new Date(utc + (3600000 * 5.5)); // IST GMT+5:30
+  const year = istDate.getFullYear();
+  const month = String(istDate.getMonth() + 1).padStart(2, '0');
+  const day = String(istDate.getDate()).padStart(2, '0');
+  return year + "-" + month + "-" + day;
+}
+
+function formatDateTimeObj(d) {
+  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  const istDate = new Date(utc + (3600000 * 5.5)); // IST GMT+5:30
+  const year = istDate.getFullYear();
+  const month = String(istDate.getMonth() + 1).padStart(2, '0');
+  const day = String(istDate.getDate()).padStart(2, '0');
+  const hours = String(istDate.getHours()).padStart(2, '0');
+  const minutes = String(istDate.getMinutes()).padStart(2, '0');
+  const seconds = String(istDate.getSeconds()).padStart(2, '0');
+  return year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+}
+
 function clearCache() {
   const cache = CacheService.getScriptCache();
   const countStr = cache.get(CACHE_KEY + "_count");
@@ -7933,6 +7990,7 @@ function getCacheData(key) {
   }
   return value;
 }
+// ─────────────────────────────────────────────────────────────────────────────
 
 function doGet(e) {
   const token = e.parameter.token;
@@ -8553,75 +8611,6 @@ function doPost(e) {
   } catch (err) {
     return makeJsonResponse({ success: false, message: err.toString() });
   }
-}
-
-// Fast Pure JS Date/Time formatting helpers
-function formatDate(dateVal) {
-  if (!dateVal || dateVal === "") return "";
-  
-  if (typeof dateVal === 'string') {
-    if (/^\d{4}-\d{2}-\d{2}/.test(dateVal)) {
-      return dateVal.substring(0, 10);
-    }
-    const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return "";
-    return formatDateObj(d);
-  }
-  
-  if (dateVal instanceof Date) {
-    if (isNaN(dateVal.getTime())) return "";
-    return formatDateObj(dateVal);
-  }
-  
-  return "";
-}
-
-function formatDateTime(dateTimeVal) {
-  if (!dateTimeVal || dateTimeVal === "") return "";
-  
-  if (typeof dateTimeVal === 'string') {
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(dateTimeVal)) {
-      return dateTimeVal.substring(0, 19);
-    }
-    const d = new Date(dateTimeVal);
-    if (isNaN(d.getTime())) return "";
-    return formatDateTimeObj(d);
-  }
-  
-  if (dateTimeVal instanceof Date) {
-    if (isNaN(dateTimeVal.getTime())) return "";
-    return formatDateTimeObj(dateTimeVal);
-  }
-  
-  return "";
-}
-
-function formatDateObj(d) {
-  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-  const istDate = new Date(utc + (3600000 * 5.5)); // IST GMT+5:30
-  
-  const year = istDate.getFullYear();
-  const month = String(istDate.getMonth() + 1).padStart(2, '0');
-  const day = String(istDate.getDate()).padStart(2, '0');
-  return year + "-" + month + "-" + day;
-}
-
-function formatDateTimeObj(d) {
-  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-  const istDate = new Date(utc + (3600000 * 5.5)); // IST GMT+5:30
-  
-  const year = istDate.getFullYear();
-  const month = String(istDate.getMonth() + 1).padStart(2, '0');
-  const day = String(istDate.getDate()).padStart(2, '0');
-  const hours = String(istDate.getHours()).padStart(2, '0');
-  const minutes = String(istDate.getMinutes()).padStart(2, '0');
-  const seconds = String(istDate.getSeconds()).padStart(2, '0');
-  return year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
-}
-
-function makeJsonResponse(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
 }
 
 /**
