@@ -5127,6 +5127,9 @@
                 queueOfflineWrite(actionName, actionPayload);
                 return;
             }
+            if (Array.isArray(actionPayload)) {
+                actionPayload = { leads: actionPayload };
+            }
             
             try {
                 const targetUrl = state.sheetsUrl;
@@ -7373,15 +7376,16 @@
             const nameLines = [];
 
             for (let i = 0; i < rawPhoneLines.length; i++) {
-                const phone = rawPhoneLines[i];
+                const rawPhone = rawPhoneLines[i];
+                const cleanPhone = cleanPhoneNumber10Digits(rawPhone) || rawPhone;
                 const name = rawNameLines[i] || `Bulk Lead ${i + 1}`;
                 
                 // Check if phone already exists anywhere in state.leads
-                const existingLead = state.leads.find(l => String(l.phoneNumber).trim() === String(phone).trim());
+                const existingLead = state.leads.find(l => cleanPhoneNumber10Digits(l.phoneNumber) === cleanPhone);
                 if (existingLead) {
-                    skippedPhones.push(`${phone} (Assigned to ${existingLead.bda})`);
+                    skippedPhones.push(`${cleanPhone} (Assigned to ${existingLead.bda})`);
                 } else {
-                    phoneLines.push(phone);
+                    phoneLines.push(cleanPhone);
                     nameLines.push(name);
                 }
             }
