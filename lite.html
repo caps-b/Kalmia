@@ -18,7 +18,7 @@
             --accent-blue: #3b82f6;
             --accent-amber: #f59e0b;
             --accent-red: #ef4444;
-            --accent-pink: #ec4899;
+            --accent-wa: #16a34a;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.4; padding: 10px; }
@@ -30,9 +30,16 @@
         .btn { background: var(--bg-input); color: #fff; border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
         .btn:hover { opacity: 0.9; }
         .btn-green { background: #166534; border-color: #22c55e; color: #86efac; }
+        .btn-wa { background: #14532d; border-color: #22c55e; color: #4ade80; }
         .btn-amber { background: #78350f; border-color: #f59e0b; color: #fde68a; }
         .btn-red { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
         .btn-blue { background: #1e3a8a; border-color: #3b82f6; color: #bfdbfe; }
+
+        /* NAVIGATION TABS */
+        .nav-tabs { display: flex; gap: 4px; margin-bottom: 10px; background: var(--bg-card); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); overflow-x: auto; }
+        .nav-tab { padding: 8px 14px; border-radius: 6px; background: transparent; border: none; color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+        .nav-tab.active { background: var(--accent-blue); color: #fff; }
+        .tab-badge { background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 800; }
 
         /* GAMIFICATION & TARGET WIDGET */
         .gami-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
@@ -41,10 +48,12 @@
         .target-pill { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg-input); border: 1px solid var(--border-color); font-weight: 600; cursor: pointer; }
         .target-pill.complete { background: #166534; border-color: #22c55e; color: #86efac; }
 
-        /* MUST-DOS & HOT CASES */
-        .panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
+        /* CARDS & PANELS */
+        .panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
         .panel-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .must-do-item { background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
+        .lead-card { background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 10px; flex-wrap: wrap; }
+        .lead-info { display: flex; flex-direction: column; gap: 2px; }
+        .action-group { display: flex; gap: 4px; align-items: center; }
 
         /* STATS GRID */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 10px; }
@@ -110,7 +119,7 @@
     <!-- HEADER NAVIGATION -->
     <header>
         <div class="logo">
-            ⚡ Kalmia CRM <span class="badge-lite">Lite (BDE Full Speed)</span>
+            ⚡ Kalmia CRM <span class="badge-lite">Lite Speed</span>
             <span id="sync-status" style="font-size:11px; color:var(--accent-amber);">Connecting...</span>
         </div>
         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
@@ -140,80 +149,120 @@
             <div style="font-size:11px; color:var(--accent-amber); font-weight:700;" id="bda-offline-conversion">Visit → Adm: 0%</div>
         </div>
         <div class="target-pills" id="target-pills-container">
-            <span class="target-pill" id="pill-conn">📞 Conn: 0/60</span>
-            <span class="target-pill" id="pill-dd">📋 DD: 0/3</span>
-            <span class="target-pill" id="pill-pitch">🎯 Pitch: 0/3</span>
-            <span class="target-pill" id="pill-visadm">⭐ Vis/Adm: 0/1</span>
-            <span class="target-pill" id="pill-adm">🎓 Adm Week: 0/5</span>
-            <span class="target-pill" id="pill-follow">🔄 Follow Week: 0/50</span>
-            <span class="target-pill" id="pill-off">📍 Off Week: 0/8</span>
-            <span class="target-pill" id="pill-month-adm">🏆 Adm Month: 0/15</span>
+            <span class="target-pill" id="pill-conn" onclick="openDetailsModal('calls')">📞 Conn: 0/60</span>
+            <span class="target-pill" id="pill-dd" onclick="openDetailsModal('dd')">📋 DD: 0/3</span>
+            <span class="target-pill" id="pill-pitch" onclick="openDetailsModal('interested')">🎯 Pitch: 0/3</span>
+            <span class="target-pill" id="pill-visadm" onclick="openDetailsModal('admission')">⭐ Vis/Adm: 0/1</span>
+            <span class="target-pill" id="pill-adm" onclick="openDetailsModal('admission')">🎓 Adm Week: 0/5</span>
+            <span class="target-pill" id="pill-follow" onclick="openDetailsModal('followup')">🔄 Follow Week: 0/50</span>
+            <span class="target-pill" id="pill-month-adm" onclick="openDetailsModal('needed')">🏆 Adm Month: 0/15</span>
         </div>
     </div>
 
-    <!-- MUST-DOS & OVERDUE FOLLOWUPS -->
-    <div class="panel" id="must-dos-panel">
+    <!-- VIEW TABS FOR CLEAN ORGANIZATION -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" id="tab-btn-action" onclick="switchLiteTab('action')">
+            🔥 Action Required <span class="tab-badge" id="badge-tab-action">0</span>
+        </button>
+        <button class="nav-tab" id="tab-btn-pipeline" onclick="switchLiteTab('pipeline')">
+            ⭐ Active Pipeline <span class="tab-badge" id="badge-tab-pipeline">0</span>
+        </button>
+        <button class="nav-tab" id="tab-btn-admissions" onclick="switchLiteTab('admissions')">
+            🎓 Admissions & Target <span class="tab-badge" id="badge-tab-admissions">0</span>
+        </button>
+        <button class="nav-tab" id="tab-btn-all" onclick="switchLiteTab('all')">
+            📂 All Leads Database <span class="tab-badge" id="badge-tab-all">0</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: ACTION REQUIRED (MUST-DOS & OVERDUE) -->
+    <div id="view-tab-action" class="panel">
         <div class="panel-title">
             <span>🔥 Today's Must-Dos & Overdue Follow-ups</span>
             <span style="font-size:11px; color:var(--accent-amber);" id="must-dos-count-badge">0 Leads</span>
         </div>
-        <div id="must-dos-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;">
-            <div style="color:var(--text-muted); text-align:center; padding:10px;">Loading must-dos...</div>
+        <div id="must-dos-list" style="display:flex; flex-direction:column; gap:6px;">
+            <div style="color:var(--text-muted); text-align:center; padding:16px;">Loading action required leads...</div>
         </div>
     </div>
 
-    <!-- STATS GRID -->
-    <div class="stats-grid">
-        <div class="stat-card" onclick="openDetailsModal('assigned')"><div class="stat-label">Assigned</div><div class="stat-val" id="st-total">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('calls')"><div class="stat-label">Recent Contacts</div><div class="stat-val" id="st-calls" style="color:var(--accent-blue);">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('connected')"><div class="stat-label">Connected</div><div class="stat-val" id="st-connected">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('dd')"><div class="stat-label">DD Done</div><div class="stat-val" id="st-dd">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('interested')"><div class="stat-label">Interested</div><div class="stat-val" id="st-interested" style="color:var(--accent-green);">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('followup')"><div class="stat-label">Follow Up</div><div class="stat-val" id="st-followup" style="color:var(--accent-amber);">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('admission')"><div class="stat-label">Admission Taken</div><div class="stat-val" id="st-admission" style="color:var(--accent-green);">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('needed')"><div class="stat-label">🎯 Adm Needed</div><div class="stat-val" id="st-needed" style="color:var(--accent-red);">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('notanswering')"><div class="stat-label">Not Answering</div><div class="stat-val" id="st-notanswering">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('dead')"><div class="stat-label">Dead Leads</div><div class="stat-val" id="st-dead" style="color:var(--accent-red);">0</div></div>
-        <div class="stat-card" onclick="openDetailsModal('prospects-permanent')"><div class="stat-label">Prospects List</div><div class="stat-val" id="st-prospects" style="color:var(--accent-amber);">0</div></div>
+    <!-- TAB 2: ACTIVE PIPELINE (INTERESTED & FOLLOW UP) -->
+    <div id="view-tab-pipeline" class="panel" style="display:none;">
+        <div class="panel-title">
+            <span>⭐ Active Pipeline Prospects (Interested & Follow Up)</span>
+            <span style="font-size:11px; color:var(--accent-green);" id="pipeline-count-badge">0 Leads</span>
+        </div>
+        <div id="pipeline-list" style="display:flex; flex-direction:column; gap:6px;">
+            <div style="color:var(--text-muted); text-align:center; padding:16px;">Loading pipeline...</div>
+        </div>
     </div>
 
-    <!-- CONTROLS & PROSPECTS QUICK ADD BAR -->
-    <div class="controls">
-        <input class="input" type="text" id="search-input" placeholder="🔍 Search name, phone..." oninput="renderTable()" style="flex:1; min-width:140px;">
-        <select class="input" id="status-filter" onchange="renderTable()">
-            <option value="ALL">All Statuses</option>
-            <option value="Assigned">Assigned</option>
-            <option value="Interested">Interested</option>
-            <option value="Follow Up">Follow Up</option>
-            <option value="Admission Taken">Admission Taken</option>
-            <option value="Not Answering">Not Answering</option>
-            <option value="Not Interested">Not Interested</option>
-            <option value="Dead">Dead</option>
-        </select>
-        <select class="input" id="source-filter" onchange="renderTable()"><option value="ALL">All Sources</option></select>
-        <select class="input" id="bda-filter" onchange="renderTable()" style="display:none;"></select>
-        <button class="btn" onclick="fetchFromSheets()">🔄 Sync Sheets</button>
+    <!-- TAB 3: ADMISSIONS & TARGET -->
+    <div id="view-tab-admissions" class="panel" style="display:none;">
+        <div class="panel-title">
+            <span>🎓 Admissions Taken & Target Remaining</span>
+            <span style="font-size:11px; color:var(--accent-green);" id="admissions-count-badge">0 Enrolled</span>
+        </div>
+        <div id="admissions-list" style="display:flex; flex-direction:column; gap:6px;">
+            <div style="color:var(--text-muted); text-align:center; padding:16px;">Loading admissions...</div>
+        </div>
     </div>
 
-    <!-- LEADS TABLE -->
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Lead Name</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                    <th>Source</th>
-                    <th>Assigned Date</th>
-                    <th>Follow Up</th>
-                    <th>BDE</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="leads-tbody">
-                <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Loading data...</td></tr>
-            </tbody>
-        </table>
+    <!-- TAB 4: ALL LEADS DATABASE -->
+    <div id="view-tab-all" style="display:none;">
+        <!-- STATS GRID -->
+        <div class="stats-grid">
+            <div class="stat-card" onclick="openDetailsModal('assigned')"><div class="stat-label">Assigned</div><div class="stat-val" id="st-total">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('calls')"><div class="stat-label">Recent Contacts</div><div class="stat-val" id="st-calls" style="color:var(--accent-blue);">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('connected')"><div class="stat-label">Connected</div><div class="stat-val" id="st-connected">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('dd')"><div class="stat-label">DD Done</div><div class="stat-val" id="st-dd">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('interested')"><div class="stat-label">Interested</div><div class="stat-val" id="st-interested" style="color:var(--accent-green);">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('followup')"><div class="stat-label">Follow Up</div><div class="stat-val" id="st-followup" style="color:var(--accent-amber);">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('admission')"><div class="stat-label">Admission Taken</div><div class="stat-val" id="st-admission" style="color:var(--accent-green);">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('needed')"><div class="stat-label">🎯 Adm Needed</div><div class="stat-val" id="st-needed" style="color:var(--accent-red);">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('notanswering')"><div class="stat-label">Not Answering</div><div class="stat-val" id="st-notanswering">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('dead')"><div class="stat-label">Dead Leads</div><div class="stat-val" id="st-dead" style="color:var(--accent-red);">0</div></div>
+            <div class="stat-card" onclick="openDetailsModal('prospects-permanent')"><div class="stat-label">Prospects List</div><div class="stat-val" id="st-prospects" style="color:var(--accent-amber);">0</div></div>
+        </div>
+
+        <!-- CONTROLS & SEARCH -->
+        <div class="controls">
+            <input class="input" type="text" id="search-input" placeholder="🔍 Search name, phone..." oninput="renderTable()" style="flex:1; min-width:140px;">
+            <select class="input" id="status-filter" onchange="renderTable()">
+                <option value="ALL">All Statuses</option>
+                <option value="Assigned">Assigned</option>
+                <option value="Interested">Interested</option>
+                <option value="Follow Up">Follow Up</option>
+                <option value="Admission Taken">Admission Taken</option>
+                <option value="Not Answering">Not Answering</option>
+                <option value="Not Interested">Not Interested</option>
+                <option value="Dead">Dead</option>
+            </select>
+            <select class="input" id="source-filter" onchange="renderTable()"><option value="ALL">All Sources</option></select>
+            <select class="input" id="bda-filter" onchange="renderTable()" style="display:none;"></select>
+            <button class="btn" onclick="fetchFromSheets()">🔄 Sync Sheets</button>
+        </div>
+
+        <!-- LEADS TABLE -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Lead Name</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Source</th>
+                        <th>Assigned Date</th>
+                        <th>Follow Up</th>
+                        <th>BDE</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="leads-tbody">
+                    <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- EDIT / CREATE LEAD MODAL -->
@@ -311,7 +360,7 @@
         </div>
     </div>
 
-    <!-- DETAILS MODAL (FOR CARD CLICKS) -->
+    <!-- DETAILS MODAL -->
     <div class="modal-overlay" id="details-modal">
         <div class="modal" style="max-width:800px;">
             <div class="modal-header">
@@ -327,7 +376,7 @@
                             <th>Status</th>
                             <th>Assigned Date</th>
                             <th>Follow Up / Due Date</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="details-tbody"></tbody>
@@ -380,7 +429,8 @@
             leads: [],
             passwords: {},
             bdaRoster: [],
-            prospectsPermanentList: []
+            prospectsPermanentList: [],
+            activeTab: 'action'
         };
 
         window.state = state;
@@ -401,6 +451,24 @@
             parts.forEach(p => map[p.type] = p.value);
             return `${map.year}-${map.month}-${map.day} ${map.hour}:${map.minute}:${map.second}`;
         }
+
+        function getWhatsAppLink(phone, leadName = '') {
+            if (!phone) return '#';
+            let clean = String(phone).replace(/\D/g, '');
+            if (clean.length === 10) clean = '91' + clean;
+            const msg = leadName ? encodeURIComponent(`Hi ${leadName}, connecting regarding your inquiry with Kalmia.`) : '';
+            return `https://wa.me/${clean}${msg ? '?text=' + msg : ''}`;
+        }
+
+        window.switchLiteTab = function(tabName) {
+            state.activeTab = tabName;
+            ['action', 'pipeline', 'admissions', 'all'].forEach(t => {
+                const btn = document.getElementById('tab-btn-' + t);
+                const view = document.getElementById('view-tab-' + t);
+                if (btn) btn.className = 'nav-tab' + (t === tabName ? ' active' : '');
+                if (view) view.style.display = (t === tabName ? 'block' : 'none');
+            });
+        };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -457,7 +525,7 @@
                     setupFilters();
                     renderStats();
                     renderGamification();
-                    renderMustDos();
+                    renderTabViews();
                     renderTable();
                     updateTodoBadge();
                 } else {
@@ -480,7 +548,6 @@
                 bdaSelect.style.display = 'none';
             }
 
-            // Sources Filter
             const sources = Array.from(new Set(state.leads.map(l => (l.leadSource || 'COLD').trim()))).filter(Boolean);
             const srcSelect = document.getElementById('source-filter');
             const editSrcSelect = document.getElementById('edit-source');
@@ -549,38 +616,97 @@
             document.getElementById('bda-target-pct').textContent = `Daily Target: ${pct}%`;
         }
 
-        function renderMustDos() {
+        function renderTabViews() {
             const today = getTodayISTString();
+
+            // 1. ACTION REQUIRED
             const overdue = state.leads.filter(l => l.nextFollowUp && l.nextFollowUp < today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus));
             const dueToday = state.leads.filter(l => l.nextFollowUp === today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus));
-            
             const mustDos = [...overdue, ...dueToday];
+
+            document.getElementById('badge-tab-action').textContent = mustDos.length;
             document.getElementById('must-dos-count-badge').textContent = `${mustDos.length} Leads`;
 
             const banner = document.getElementById('untouched-warning-banner');
             banner.style.display = overdue.length > 5 ? 'block' : 'none';
 
-            const container = document.getElementById('must-dos-list');
+            const actionContainer = document.getElementById('must-dos-list');
             if (mustDos.length === 0) {
-                container.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:10px;">🎉 All caught up! No overdue or due-today follow-ups.</div>';
-                return;
+                actionContainer.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:16px;">🎉 All caught up! No overdue or due-today follow-ups.</div>';
+            } else {
+                actionContainer.innerHTML = mustDos.slice(0, 50).map(l => {
+                    const isOverdue = l.nextFollowUp < today;
+                    const waUrl = getWhatsAppLink(l.phoneNumber, l.name);
+                    return `
+                        <div class="lead-card" style="border-left:4px solid ${isOverdue ? 'var(--accent-red)' : 'var(--accent-amber)'};">
+                            <div class="lead-info">
+                                <b style="font-size:13px;">${l.name} <span class="status-badge" style="background:rgba(255,255,255,0.06); font-size:10px;">${l.leadStatus}</span></b>
+                                <div style="font-size:11px; color:var(--text-muted);">${l.phoneNumber} • ${isOverdue ? '<span style="color:#fca5a5; font-weight:700;">Overdue: ' + l.nextFollowUp + '</span>' : '<span style="color:#fde68a; font-weight:700;">Due Today</span>'}</div>
+                            </div>
+                            <div class="action-group">
+                                <a href="tel:${l.phoneNumber}" class="btn btn-green">📞 Call</a>
+                                <a href="${waUrl}" target="_blank" class="btn btn-wa">💬 WhatsApp</a>
+                                <button class="btn" onclick="openLeadModal('${l.id}')">✏️ Edit</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }
 
-            container.innerHTML = mustDos.slice(0, 10).map(l => {
-                const isOverdue = l.nextFollowUp < today;
-                return `
-                    <div class="must-do-item" style="border-left:4px solid ${isOverdue ? 'var(--accent-red)' : 'var(--accent-amber)'};">
-                        <div>
-                            <b>${l.name}</b> <span style="font-size:10px; color:var(--text-muted);">(${l.leadStatus})</span>
-                            <div style="font-size:11px; color:var(--text-muted);">${l.phoneNumber} • ${isOverdue ? 'Overdue: ' + l.nextFollowUp : 'Due Today'}</div>
+            // 2. ACTIVE PIPELINE
+            const pipeline = state.leads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus));
+            document.getElementById('badge-tab-pipeline').textContent = pipeline.length;
+            document.getElementById('pipeline-count-badge').textContent = `${pipeline.length} Leads`;
+            const pipeContainer = document.getElementById('pipeline-list');
+            if (pipeline.length === 0) {
+                pipeContainer.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:16px;">No active pipeline prospects.</div>';
+            } else {
+                pipeContainer.innerHTML = pipeline.slice(0, 50).map(l => {
+                    const waUrl = getWhatsAppLink(l.phoneNumber, l.name);
+                    return `
+                        <div class="lead-card" style="border-left:4px solid var(--accent-green);">
+                            <div class="lead-info">
+                                <b style="font-size:13px;">${l.name} <span class="status-badge" style="background:rgba(34,197,94,0.15); color:var(--accent-green);">${l.leadStatus}</span></b>
+                                <div style="font-size:11px; color:var(--text-muted);">${l.phoneNumber} • Source: ${l.leadSource || 'COLD'} • Followup: ${l.nextFollowUp || '-'}</div>
+                            </div>
+                            <div class="action-group">
+                                <a href="tel:${l.phoneNumber}" class="btn btn-green">📞 Call</a>
+                                <a href="${waUrl}" target="_blank" class="btn btn-wa">💬 WhatsApp</a>
+                                <button class="btn" onclick="openLeadModal('${l.id}')">✏️ Edit</button>
+                            </div>
                         </div>
-                        <div style="display:flex; gap:4px;">
-                            <a href="tel:${l.phoneNumber}" class="btn btn-green" style="padding:3px 8px;">📞 Call</a>
-                            <button class="btn" style="padding:3px 8px;" onclick="openLeadModal('${l.id}')">Edit</button>
+                    `;
+                }).join('');
+            }
+
+            // 3. ADMISSIONS & TARGET
+            const admissions = state.leads.filter(l => l.leadStatus === 'Admission Taken');
+            document.getElementById('badge-tab-admissions').textContent = admissions.length;
+            document.getElementById('admissions-count-badge').textContent = `${admissions.length} Enrolled`;
+            const admContainer = document.getElementById('admissions-list');
+            if (admissions.length === 0) {
+                admContainer.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:16px;">No admissions recorded yet this period.</div>';
+            } else {
+                admContainer.innerHTML = admissions.map(l => {
+                    const waUrl = getWhatsAppLink(l.phoneNumber, l.name);
+                    return `
+                        <div class="lead-card" style="border-left:4px solid var(--accent-green);">
+                            <div class="lead-info">
+                                <b style="font-size:13px;">${l.name} <span class="status-badge" style="background:rgba(34,197,94,0.2); color:#86efac;">🎓 Enrolled (${l.admissionType || 'online'})</span></b>
+                                <div style="font-size:11px; color:var(--text-muted);">${l.phoneNumber} • Count: ${l.admissionCount || 1} • Due Date: ${l.dueDate || '-'}</div>
+                            </div>
+                            <div class="action-group">
+                                <a href="tel:${l.phoneNumber}" class="btn btn-green">📞 Call</a>
+                                <a href="${waUrl}" target="_blank" class="btn btn-wa">💬 WhatsApp</a>
+                                <button class="btn" onclick="openLeadModal('${l.id}')">✏️ Edit</button>
+                            </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            }
+
+            // 4. DATABASE TAB BADGE
+            document.getElementById('badge-tab-all').textContent = state.leads.length;
         }
 
         window.renderTable = function() {
@@ -624,6 +750,7 @@
                 else if (l.leadStatus === 'Dead') badgeCol = "var(--accent-red)";
 
                 const isEsc = l.escalatedState && l.escalatedState !== 'resolved';
+                const waUrl = getWhatsAppLink(l.phoneNumber, l.name);
 
                 return `
                     <tr style="${isEsc ? 'background:rgba(239,68,68,0.15);' : ''}">
@@ -634,7 +761,13 @@
                         <td>${l.assignedDate || '-'}</td>
                         <td>${l.nextFollowUp || '-'}</td>
                         <td>${l.bda || '-'}</td>
-                        <td><button class="btn btn-green" onclick="openLeadModal('${l.id}')">Edit</button></td>
+                        <td>
+                            <div style="display:flex; gap:4px;">
+                                <a href="tel:${l.phoneNumber}" class="btn btn-green" style="padding:3px 6px;">📞 Call</a>
+                                <a href="${waUrl}" target="_blank" class="btn btn-wa" style="padding:3px 6px;">💬 WA</a>
+                                <button class="btn" style="padding:3px 6px;" onclick="openLeadModal('${l.id}')">✏️ Edit</button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -665,16 +798,25 @@
             }
 
             titleEl.textContent = title;
-            tbody.innerHTML = matched.map(l => `
-                <tr>
-                    <td><b>${l.name}</b></td>
-                    <td>${l.phoneNumber}</td>
-                    <td>${l.leadStatus}</td>
-                    <td>${l.assignedDate || '-'}</td>
-                    <td>${l.nextFollowUp || l.dueDate || '-'}</td>
-                    <td><button class="btn btn-green" onclick="closeDetailsModal(); openLeadModal('${l.id}')">Edit</button></td>
-                </tr>
-            `).join('') || '<tr><td colspan="6" style="text-align:center; padding:16px;">No leads found in this filter.</td></tr>';
+            tbody.innerHTML = matched.map(l => {
+                const waUrl = getWhatsAppLink(l.phoneNumber, l.name);
+                return `
+                    <tr>
+                        <td><b>${l.name}</b></td>
+                        <td>${l.phoneNumber}</td>
+                        <td>${l.leadStatus}</td>
+                        <td>${l.assignedDate || '-'}</td>
+                        <td>${l.nextFollowUp || l.dueDate || '-'}</td>
+                        <td>
+                            <div style="display:flex; gap:4px;">
+                                <a href="tel:${l.phoneNumber}" class="btn btn-green" style="padding:3px 6px;">📞 Call</a>
+                                <a href="${waUrl}" target="_blank" class="btn btn-wa" style="padding:3px 6px;">💬 WA</a>
+                                <button class="btn" style="padding:3px 6px;" onclick="closeDetailsModal(); openLeadModal('${l.id}')">✏️ Edit</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('') || '<tr><td colspan="6" style="text-align:center; padding:16px;">No leads found in this filter.</td></tr>';
 
             modal.style.display = 'flex';
         };
@@ -843,7 +985,7 @@
             });
             if (count > 0) {
                 alert(`⚡ Lead Roller: Rolled over ${count} old leads to today!`);
-                renderMustDos();
+                renderTabViews();
                 renderTable();
             } else {
                 alert("⚡ Lead Roller: All follow-ups are up to date!");
