@@ -11524,14 +11524,11 @@ function syncCalendarEvent(ss, payload) {
 
             logActivity(`<span class='feed-author'>BDA ${state.activeUser.name}</span> escalated lead <span class='feed-author'>${leadObj.name}</span> to TL (Reason: ${reason})`);
 
-            // Save to Sheets / LocalStorage
-            postToSheets('saveStaffUser', {
-                email: leadObj.phoneNumber, // dummy tag for search re-use
-                escalatedState: 'escalated_to_tl',
-                escalatedCreatedAt: leadObj.escalatedCreatedAt,
-                escalatedTlName: leadObj.escalatedTlName,
-                comments: logMsg
-            }).catch(e => console.warn(e));
+            // Save to LocalStorage & Sheets
+            saveData();
+            if (state.engineMode === 'sheets') {
+                postToSheets('saveLead', leadObj).catch(e => console.warn("Escalation sheets save error:", e));
+            }
 
             alert("Lead successfully escalated to Team Lead!");
             closeLeadModal();
@@ -11554,6 +11551,12 @@ function syncCalendarEvent(ss, payload) {
             leadObj.comments = logMsg + ' | ' + (leadObj.comments || '');
 
             logActivity(`<span class='feed-author'>TL ${state.activeUser.name}</span> resolved escalation for <span class='feed-author'>${leadObj.name}</span>`);
+
+            // Save to LocalStorage & Sheets
+            saveData();
+            if (state.engineMode === 'sheets') {
+                postToSheets('saveLead', leadObj).catch(e => console.warn("Escalation resolve sheets save error:", e));
+            }
 
             alert("Escalation resolved successfully!");
             closeLeadModal();
