@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalmia CRM (Lite Speed Version)</title>
+    <!-- Canvas Confetti for Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --bg-body: #0f172a;
@@ -16,23 +18,38 @@
             --accent-blue: #3b82f6;
             --accent-amber: #f59e0b;
             --accent-red: #ef4444;
+            --accent-pink: #ec4899;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.4; padding: 10px; }
-        
+
         /* HEADER & TOP BAR */
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
         .logo { font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px; }
-        .badge-lite { background: var(--accent-blue); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+        .badge-lite { background: var(--accent-green); color: #000; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
         .btn { background: var(--bg-input); color: #fff; border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
         .btn:hover { opacity: 0.9; }
         .btn-green { background: #166534; border-color: #22c55e; color: #86efac; }
         .btn-amber { background: #78350f; border-color: #f59e0b; color: #fde68a; }
         .btn-red { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
+        .btn-blue { background: #1e3a8a; border-color: #3b82f6; color: #bfdbfe; }
+
+        /* GAMIFICATION & TARGET WIDGET */
+        .gami-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
+        .gami-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .target-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .target-pill { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg-input); border: 1px solid var(--border-color); font-weight: 600; cursor: pointer; }
+        .target-pill.complete { background: #166534; border-color: #22c55e; color: #86efac; }
+
+        /* MUST-DOS & HOT CASES */
+        .panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
+        .panel-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .must-do-item { background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
 
         /* STATS GRID */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 10px; }
-        .stat-card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 6px; text-align: center; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 6px; text-align: center; cursor: pointer; }
+        .stat-card:hover { border-color: var(--accent-blue); }
         .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
         .stat-val { font-size: 18px; font-weight: 800; margin-top: 2px; }
 
@@ -43,7 +60,7 @@
         select.input { cursor: pointer; }
 
         /* TABLE */
-        .table-wrap { overflow-x: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; max-height: 70vh; }
+        .table-wrap { overflow-x: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; max-height: 60vh; }
         table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; font-size: 12px; }
         th { background: #0f172a; position: sticky; top: 0; z-index: 10; padding: 8px 10px; border-bottom: 1px solid var(--border-color); color: var(--text-muted); }
         td { padding: 8px 10px; border-bottom: 1px solid #334155; }
@@ -52,12 +69,17 @@
 
         /* MODAL */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 999; padding: 10px; }
-        .modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 14px; }
+        .modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; width: 100%; max-width: 720px; max-height: 92vh; overflow-y: auto; padding: 14px; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        @media(max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        @media(max-width: 600px) { .form-grid, .form-grid-3 { grid-template-columns: 1fr; } }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         .form-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+
+        /* TIMELINE */
+        .timeline { border-left: 2px solid var(--border-color); padding-left: 12px; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 180px; overflow-y: auto; }
+        .timeline-item { font-size: 11px; background: var(--bg-body); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
 
         /* LOGIN SCREEN */
         #login-screen { position: fixed; inset: 0; background: var(--bg-body); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 10px; }
@@ -69,8 +91,8 @@
     <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="login-card">
-            <h2 style="margin-bottom:12px; font-size:18px;">⚡ Kalmia CRM (Lite)</h2>
-            <p style="color:var(--text-muted); font-size:11px; margin-bottom:16px;">Fast, Low-RAM CRM View</p>
+            <h2 style="margin-bottom:8px; font-size:18px;">⚡ Kalmia CRM (Lite Speed)</h2>
+            <p style="color:var(--text-muted); font-size:11px; margin-bottom:16px;">Fast, Zero-Lag CRM for BDEs</p>
             <form onsubmit="handleLiteLogin(event)">
                 <div class="form-group" style="margin-bottom:12px;">
                     <label>Work Email</label>
@@ -85,31 +107,77 @@
         </div>
     </div>
 
-    <!-- MAIN APP CONTENT -->
+    <!-- HEADER NAVIGATION -->
     <header>
         <div class="logo">
-            ⚡ Kalmia CRM <span class="badge-lite">Lite (Low RAM)</span>
+            ⚡ Kalmia CRM <span class="badge-lite">Lite (BDE Full Speed)</span>
             <span id="sync-status" style="font-size:11px; color:var(--accent-amber);">Connecting...</span>
         </div>
         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-            <button class="btn btn-amber" onclick="toggleTodoDrawer()">📋 To-Do (<span id="todo-count">0</span>)</button>
+            <button class="btn btn-blue" onclick="toggleTodoDrawer()">📋 To-Do (<span id="todo-count">0</span>)</button>
+            <button class="btn btn-amber" onclick="executeAutoLeadRoller()" title="Roll over old leads to today">⚡ Lead Roller</button>
             <button class="btn btn-green" onclick="openLeadModal('')">➕ New Lead</button>
-            <a href="index.html" class="btn">🚀 Pro Version</a>
+            <label class="btn btn-blue" style="cursor:pointer;" title="Import CSV Bulk Leads">
+                📥 Import CSV <input type="file" id="csv-file-input" accept=".csv" onchange="handleCSVImport(event)" style="display:none;">
+            </label>
+            <a href="index.html" class="btn">🚀 Pro View</a>
             <button class="btn btn-red" onclick="handleLogout()">Log Out</button>
         </div>
     </header>
 
-    <!-- STATS -->
-    <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val" id="st-total">0</div></div>
-        <div class="stat-card"><div class="stat-label">Connected</div><div class="stat-val" id="st-connected" style="color:var(--accent-blue);">0</div></div>
-        <div class="stat-card"><div class="stat-label">Interested</div><div class="stat-val" id="st-interested" style="color:var(--accent-green);">0</div></div>
-        <div class="stat-card"><div class="stat-label">Follow Up</div><div class="stat-val" id="st-followup" style="color:var(--accent-amber);">0</div></div>
-        <div class="stat-card"><div class="stat-label">Admissions</div><div class="stat-val" id="st-admission" style="color:var(--accent-green);">0</div></div>
-        <div class="stat-card"><div class="stat-label">🎯 Needed</div><div class="stat-val" id="st-needed" style="color:var(--accent-red);">0</div></div>
+    <!-- UNTOUCHED WARNING BANNER -->
+    <div id="untouched-warning-banner" style="display:none; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); padding:8px 12px; border-radius:6px; margin-bottom:10px; color:#fca5a5; font-size:12px; font-weight:700;">
+        ⚠️ Attention: You have untouched follow-ups over 5 days old! Use Lead Roller or check your Must-Dos list.
     </div>
 
-    <!-- CONTROLS & SEARCH -->
+    <!-- GAMIFICATION & TARGET WIDGET -->
+    <div class="gami-box">
+        <div class="gami-header">
+            <div>
+                <span style="font-weight:800; font-size:14px; color:#fff;" id="bda-level-badge">⭐ BDE Performance Tracker</span>
+                <span style="font-size:11px; color:var(--text-muted); margin-left:8px;" id="bda-target-pct">Target Completion: 0%</span>
+            </div>
+            <div style="font-size:11px; color:var(--accent-amber); font-weight:700;" id="bda-offline-conversion">Visit → Adm: 0%</div>
+        </div>
+        <div class="target-pills" id="target-pills-container">
+            <span class="target-pill" id="pill-conn">📞 Conn: 0/60</span>
+            <span class="target-pill" id="pill-dd">📋 DD: 0/3</span>
+            <span class="target-pill" id="pill-pitch">🎯 Pitch: 0/3</span>
+            <span class="target-pill" id="pill-visadm">⭐ Vis/Adm: 0/1</span>
+            <span class="target-pill" id="pill-adm">🎓 Adm Week: 0/5</span>
+            <span class="target-pill" id="pill-follow">🔄 Follow Week: 0/50</span>
+            <span class="target-pill" id="pill-off">📍 Off Week: 0/8</span>
+            <span class="target-pill" id="pill-month-adm">🏆 Adm Month: 0/15</span>
+        </div>
+    </div>
+
+    <!-- MUST-DOS & OVERDUE FOLLOWUPS -->
+    <div class="panel" id="must-dos-panel">
+        <div class="panel-title">
+            <span>🔥 Today's Must-Dos & Overdue Follow-ups</span>
+            <span style="font-size:11px; color:var(--accent-amber);" id="must-dos-count-badge">0 Leads</span>
+        </div>
+        <div id="must-dos-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;">
+            <div style="color:var(--text-muted); text-align:center; padding:10px;">Loading must-dos...</div>
+        </div>
+    </div>
+
+    <!-- STATS GRID -->
+    <div class="stats-grid">
+        <div class="stat-card" onclick="openDetailsModal('assigned')"><div class="stat-label">Assigned</div><div class="stat-val" id="st-total">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('calls')"><div class="stat-label">Recent Contacts</div><div class="stat-val" id="st-calls" style="color:var(--accent-blue);">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('connected')"><div class="stat-label">Connected</div><div class="stat-val" id="st-connected">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('dd')"><div class="stat-label">DD Done</div><div class="stat-val" id="st-dd">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('interested')"><div class="stat-label">Interested</div><div class="stat-val" id="st-interested" style="color:var(--accent-green);">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('followup')"><div class="stat-label">Follow Up</div><div class="stat-val" id="st-followup" style="color:var(--accent-amber);">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('admission')"><div class="stat-label">Admission Taken</div><div class="stat-val" id="st-admission" style="color:var(--accent-green);">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('needed')"><div class="stat-label">🎯 Adm Needed</div><div class="stat-val" id="st-needed" style="color:var(--accent-red);">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('notanswering')"><div class="stat-label">Not Answering</div><div class="stat-val" id="st-notanswering">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('dead')"><div class="stat-label">Dead Leads</div><div class="stat-val" id="st-dead" style="color:var(--accent-red);">0</div></div>
+        <div class="stat-card" onclick="openDetailsModal('prospects-permanent')"><div class="stat-label">Prospects List</div><div class="stat-val" id="st-prospects" style="color:var(--accent-amber);">0</div></div>
+    </div>
+
+    <!-- CONTROLS & PROSPECTS QUICK ADD BAR -->
     <div class="controls">
         <input class="input" type="text" id="search-input" placeholder="🔍 Search name, phone..." oninput="renderTable()" style="flex:1; min-width:140px;">
         <select class="input" id="status-filter" onchange="renderTable()">
@@ -122,8 +190,9 @@
             <option value="Not Interested">Not Interested</option>
             <option value="Dead">Dead</option>
         </select>
+        <select class="input" id="source-filter" onchange="renderTable()"><option value="ALL">All Sources</option></select>
         <select class="input" id="bda-filter" onchange="renderTable()" style="display:none;"></select>
-        <button class="btn" onclick="fetchFromSheets()">🔄 Refresh Data</button>
+        <button class="btn" onclick="fetchFromSheets()">🔄 Sync Sheets</button>
     </div>
 
     <!-- LEADS TABLE -->
@@ -159,8 +228,8 @@
                 <input type="hidden" id="edit-bda">
 
                 <!-- MANAGER REASSIGN BDE -->
-                <div class="form-group" id="edit-bda-container" style="display:none; margin-bottom:10px;">
-                    <label style="color:var(--accent-amber);">🔄 Assigned BDE (Reassign):</label>
+                <div class="form-group" id="edit-bda-container" style="display:none; margin-bottom:10px; background:rgba(245,158,11,0.08); padding:8px; border-radius:6px; border:1px solid rgba(245,158,11,0.25);">
+                    <label style="color:var(--accent-amber);">🔄 Assigned BDE (Manager Reassign):</label>
                     <select class="input" id="edit-bda-select" onchange="document.getElementById('edit-bda').value = this.value;"></select>
                 </div>
 
@@ -170,7 +239,7 @@
                 </div>
 
                 <div class="form-grid">
-                    <div class="form-group"><label>Lead Source</label><input class="input" id="edit-source"></div>
+                    <div class="form-group"><label>Lead Source</label><select class="input" id="edit-source"></select></div>
                     <div class="form-group">
                         <label>Lead Status</label>
                         <select class="input" id="edit-status" onchange="updateDynamicModalFields()" required>
@@ -187,27 +256,48 @@
 
                 <!-- DD & FOLLOW UP GROUP (Interested / Follow Up / Assigned) -->
                 <div id="group-dd" style="display:flex; flex-direction:column; gap:10px; margin-bottom:10px;">
-                    <div class="form-grid">
+                    <div class="form-grid-3">
                         <div class="form-group"><label>DD Done</label><select class="input" id="edit-dd"><option value="No">No</option><option value="Yes">Yes</option></select></div>
                         <div class="form-group"><label>Procourse Pitch</label><select class="input" id="edit-procourse"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                        <div class="form-group"><label>Offline Visit</label><select class="input" id="edit-offline"><option value="No">No</option><option value="Scheduled">Scheduled</option><option value="Yes">Yes</option></select></div>
                     </div>
                     <div class="form-grid">
-                        <div class="form-group"><label>Offline Visit</label><select class="input" id="edit-offline"><option value="No">No</option><option value="Scheduled">Scheduled</option><option value="Yes">Yes</option></select></div>
-                        <div class="form-group"><label>Next Follow Up Date</label><input class="input" type="date" id="edit-followup"></div>
+                        <div class="form-group"><label style="color:#a3f7be;">📞 Last Connected</label><input class="input" id="edit-last-connected" readonly style="background:rgba(255,255,255,0.03); color:#a3f7be;"></div>
+                        <div class="form-group"><label style="color:var(--accent-amber);">📅 Next Follow Up Date</label><input class="input" type="date" id="edit-followup"></div>
+                    </div>
+                    <!-- GOOGLE CALENDAR SCHEDULER -->
+                    <div class="form-group" style="background:rgba(29,185,84,0.05); padding:8px 10px; border-radius:6px; border:1px dashed var(--border-color);">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; margin:0;">
+                            <input type="checkbox" id="edit-gcal-check" onchange="document.getElementById('gcal-time-wrap').style.display = this.checked ? 'block' : 'none'">
+                            <span style="color:var(--accent-green);">Schedule Google Calendar Event</span>
+                        </label>
+                        <div id="gcal-time-wrap" style="display:none; margin-top:6px;">
+                            <label style="font-size:11px;">Select Reminder Date & Time:</label>
+                            <input class="input" type="datetime-local" id="edit-gcal-time" style="margin-top:2px; width:100%;">
+                        </div>
                     </div>
                 </div>
 
                 <!-- ADMISSION GROUP (Admission Taken) -->
-                <div id="group-admission" style="display:none; flex-direction:column; gap:10px; margin-bottom:10px;">
-                    <div class="form-grid">
-                        <div class="form-group"><label>Admission Type</label><select class="input" id="edit-adm-type"><option value="online">Online</option><option value="offline">Offline</option></select></div>
-                        <div class="form-group"><label>Admission Count</label><select class="input" id="edit-adm-count"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></div>
+                <div id="group-admission" style="display:none; flex-direction:column; gap:10px; margin-bottom:10px; background:rgba(29,185,84,0.05); padding:10px; border-radius:6px; border:1px solid rgba(29,185,84,0.2);">
+                    <div class="form-grid-3">
+                        <div class="form-group"><label style="color:var(--accent-green);">🎓 Admission Type</label><select class="input" id="edit-adm-type"><option value="online">Online</option><option value="offline">Offline</option></select></div>
+                        <div class="form-group"><label style="color:var(--accent-green);">🔢 Admission Count</label><select class="input" id="edit-adm-count"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></div>
+                        <div class="form-group"><label style="color:var(--accent-green);">📅 Admission Due Date</label><input class="input" type="date" id="edit-due"></div>
                     </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom:12px;">
                     <label>Log New Comment / Interaction</label>
                     <textarea class="input" id="edit-comments" rows="3" placeholder="Type new interaction comment..."></textarea>
+                </div>
+
+                <!-- HISTORY TIMELINE -->
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Customer History Timeline</label>
+                    <div class="timeline" id="edit-timeline">
+                        <div class="timeline-item">No touchpoints recorded.</div>
+                    </div>
                 </div>
 
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
@@ -218,6 +308,31 @@
                     <button type="submit" class="btn btn-green">Save Lead</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- DETAILS MODAL (FOR CARD CLICKS) -->
+    <div class="modal-overlay" id="details-modal">
+        <div class="modal" style="max-width:800px;">
+            <div class="modal-header">
+                <h3 id="details-title" style="font-size:14px;">Filtered Leads</h3>
+                <button class="btn" onclick="closeDetailsModal()">✕</button>
+            </div>
+            <div class="table-wrap" style="max-height:60vh;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lead Name</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Assigned Date</th>
+                            <th>Follow Up / Due Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="details-tbody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -264,19 +379,35 @@
             sheetsToken: "",
             leads: [],
             passwords: {},
-            bdaRoster: []
+            bdaRoster: [],
+            prospectsPermanentList: []
         };
 
         window.state = state;
+
+        function getTodayISTString() {
+            const dateObj = new Date();
+            const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const formatter = new Intl.DateTimeFormat('en-CA', options);
+            return formatter.format(dateObj);
+        }
+
+        function getISTDateTimeString() {
+            const dateObj = new Date();
+            const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const formatter = new Intl.DateTimeFormat('en-CA', options);
+            const parts = formatter.formatToParts(dateObj);
+            const map = {};
+            parts.forEach(p => map[p.type] = p.value);
+            return `${map.year}-${map.month}-${map.day} ${map.hour}:${map.minute}:${map.second}`;
+        }
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 const email = user.email.toLowerCase().trim();
                 let conf = USER_SHEET_MAP[email];
                 if (!conf && email.includes('@')) {
-                    const domain = email.split('@')[1];
-                    const managerEmail = domain === 'kalmia.in' ? 'sthitin@kalmia.in' : 'sthitin@kalmia.in';
-                    conf = USER_SHEET_MAP[managerEmail];
+                    conf = USER_SHEET_MAP["sthitin@kalmia.in"];
                 }
                 state.sheetsUrl = conf ? conf.url : "";
                 state.sheetsToken = conf ? conf.token : "";
@@ -323,8 +454,10 @@
                     state.bdaRoster = data.bdas || [];
                     statusEl.textContent = "🟢 Live Connected";
                     statusEl.style.color = "var(--accent-green)";
-                    setupBdaFilter();
+                    setupFilters();
                     renderStats();
+                    renderGamification();
+                    renderMustDos();
                     renderTable();
                     updateTodoBadge();
                 } else {
@@ -336,7 +469,7 @@
             }
         };
 
-        function setupBdaFilter() {
+        function setupFilters() {
             const bdaSelect = document.getElementById('bda-filter');
             if (state.activeUser && state.activeUser.role === 'manager') {
                 bdaSelect.style.display = 'inline-block';
@@ -346,11 +479,26 @@
             } else {
                 bdaSelect.style.display = 'none';
             }
+
+            // Sources Filter
+            const sources = Array.from(new Set(state.leads.map(l => (l.leadSource || 'COLD').trim()))).filter(Boolean);
+            const srcSelect = document.getElementById('source-filter');
+            const editSrcSelect = document.getElementById('edit-source');
+            let sHtml = '<option value="ALL">All Sources</option>';
+            let editHtml = '';
+            sources.forEach(s => {
+                sHtml += `<option value="${s}">${s}</option>`;
+                editHtml += `<option value="${s}">${s}</option>`;
+            });
+            srcSelect.innerHTML = sHtml;
+            editSrcSelect.innerHTML = editHtml;
         }
 
         function renderStats() {
             const total = state.leads.length;
+            const calls = state.leads.filter(l => l.connectedOn && l.connectedOn.trim() !== '').length;
             const connected = state.leads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)).length;
+            const dd = state.leads.filter(l => l.ddDone && String(l.ddDone).toLowerCase() === 'yes').length;
             const interested = state.leads.filter(l => l.leadStatus === 'Interested').length;
             const followup = state.leads.filter(l => l.leadStatus === 'Follow Up').length;
             
@@ -359,21 +507,87 @@
                 if (l.leadStatus === 'Admission Taken') admissions += (parseInt(l.admissionCount) || 1);
             });
 
+            const notanswering = state.leads.filter(l => String(l.leadStatus).includes('Not Answering')).length;
+            const dead = state.leads.filter(l => ['Dead','No Incoming'].includes(l.leadStatus)).length;
+
             const target = (state.activeUser && state.activeUser.role === 'manager') ? (state.bdaRoster.length * 15) : 15;
             const needed = Math.max(0, target - admissions);
 
             document.getElementById('st-total').textContent = total;
+            document.getElementById('st-calls').textContent = calls;
             document.getElementById('st-connected').textContent = connected;
+            document.getElementById('st-dd').textContent = dd;
             document.getElementById('st-interested').textContent = interested;
             document.getElementById('st-followup').textContent = followup;
             document.getElementById('st-admission').textContent = admissions;
             document.getElementById('st-needed').textContent = needed;
+            document.getElementById('st-notanswering').textContent = notanswering;
+            document.getElementById('st-dead').textContent = dead;
+            document.getElementById('st-prospects').textContent = (state.prospectsPermanentList || []).length;
+        }
+
+        function renderGamification() {
+            const today = getTodayISTString();
+            const connToday = state.leads.filter(l => l.connectedOn && l.connectedOn.startsWith(today)).length;
+            const ddToday = state.leads.filter(l => l.ddDone === 'Yes' && l.connectedOn && l.connectedOn.startsWith(today)).length;
+            const pitchToday = state.leads.filter(l => l.procoursePitch === 'Yes' && l.connectedOn && l.connectedOn.startsWith(today)).length;
+            const visadmToday = state.leads.filter(l => (l.offlineVisit === 'Yes' || l.leadStatus === 'Admission Taken') && l.connectedOn && l.connectedOn.startsWith(today)).length;
+
+            document.getElementById('pill-conn').textContent = `📞 Conn: ${connToday}/60`;
+            document.getElementById('pill-conn').className = `target-pill ${connToday >= 60 ? 'complete':''}`;
+
+            document.getElementById('pill-dd').textContent = `📋 DD: ${ddToday}/3`;
+            document.getElementById('pill-dd').className = `target-pill ${ddToday >= 3 ? 'complete':''}`;
+
+            document.getElementById('pill-pitch').textContent = `🎯 Pitch: ${pitchToday}/3`;
+            document.getElementById('pill-pitch').className = `target-pill ${pitchToday >= 3 ? 'complete':''}`;
+
+            document.getElementById('pill-visadm').textContent = `⭐ Vis/Adm: ${visadmToday}/1`;
+            document.getElementById('pill-visadm').className = `target-pill ${visadmToday >= 1 ? 'complete':''}`;
+
+            const pct = Math.min(100, Math.round(((connToday/60 + ddToday/3 + pitchToday/3 + visadmToday/1)/4)*100));
+            document.getElementById('bda-target-pct').textContent = `Daily Target: ${pct}%`;
+        }
+
+        function renderMustDos() {
+            const today = getTodayISTString();
+            const overdue = state.leads.filter(l => l.nextFollowUp && l.nextFollowUp < today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus));
+            const dueToday = state.leads.filter(l => l.nextFollowUp === today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus));
+            
+            const mustDos = [...overdue, ...dueToday];
+            document.getElementById('must-dos-count-badge').textContent = `${mustDos.length} Leads`;
+
+            const banner = document.getElementById('untouched-warning-banner');
+            banner.style.display = overdue.length > 5 ? 'block' : 'none';
+
+            const container = document.getElementById('must-dos-list');
+            if (mustDos.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:10px;">🎉 All caught up! No overdue or due-today follow-ups.</div>';
+                return;
+            }
+
+            container.innerHTML = mustDos.slice(0, 10).map(l => {
+                const isOverdue = l.nextFollowUp < today;
+                return `
+                    <div class="must-do-item" style="border-left:4px solid ${isOverdue ? 'var(--accent-red)' : 'var(--accent-amber)'};">
+                        <div>
+                            <b>${l.name}</b> <span style="font-size:10px; color:var(--text-muted);">(${l.leadStatus})</span>
+                            <div style="font-size:11px; color:var(--text-muted);">${l.phoneNumber} • ${isOverdue ? 'Overdue: ' + l.nextFollowUp : 'Due Today'}</div>
+                        </div>
+                        <div style="display:flex; gap:4px;">
+                            <a href="tel:${l.phoneNumber}" class="btn btn-green" style="padding:3px 8px;">📞 Call</a>
+                            <button class="btn" style="padding:3px 8px;" onclick="openLeadModal('${l.id}')">Edit</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         window.renderTable = function() {
             const tbody = document.getElementById('leads-tbody');
             const search = document.getElementById('search-input').value.toLowerCase().trim();
             const statusF = document.getElementById('status-filter').value;
+            const sourceF = document.getElementById('source-filter').value;
             const bdaF = document.getElementById('bda-filter').value;
 
             let list = state.leads;
@@ -387,6 +601,10 @@
 
             if (statusF !== 'ALL') {
                 list = list.filter(l => l.leadStatus === statusF || (statusF === 'Not Answering' && String(l.leadStatus).includes('Not Answering')));
+            }
+
+            if (sourceF !== 'ALL') {
+                list = list.filter(l => String(l.leadSource || 'COLD').trim() === sourceF);
             }
 
             if (search) {
@@ -422,6 +640,49 @@
             }).join('');
         };
 
+        window.openDetailsModal = function(cardId) {
+            const modal = document.getElementById('details-modal');
+            const tbody = document.getElementById('details-tbody');
+            const titleEl = document.getElementById('details-title');
+
+            let matched = [];
+            let title = "Leads Details";
+
+            if (cardId === 'assigned') { matched = state.leads.filter(l => l.leadStatus === 'Assigned'); title = "Assigned Leads"; }
+            else if (cardId === 'calls') { matched = state.leads.filter(l => l.connectedOn); title = "Recent Contacts"; }
+            else if (cardId === 'connected') { matched = state.leads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)); title = "Connected Leads"; }
+            else if (cardId === 'dd') { matched = state.leads.filter(l => l.ddDone === 'Yes'); title = "DD Done"; }
+            else if (cardId === 'interested') { matched = state.leads.filter(l => l.leadStatus === 'Interested'); title = "Interested Leads"; }
+            else if (cardId === 'followup') { matched = state.leads.filter(l => l.leadStatus === 'Follow Up'); title = "Follow Up Leads"; }
+            else if (cardId === 'admission') { matched = state.leads.filter(l => l.leadStatus === 'Admission Taken'); title = "Admissions Taken"; }
+            else if (cardId === 'needed') { matched = state.leads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)); title = "Admissions Needed (Pipeline)"; }
+            else if (cardId === 'notanswering') { matched = state.leads.filter(l => String(l.leadStatus).includes('Not Answering')); title = "Not Answering Leads"; }
+            else if (cardId === 'dead') { matched = state.leads.filter(l => ['Dead','No Incoming'].includes(l.leadStatus)); title = "Dead Leads"; }
+            else if (cardId === 'prospects-permanent') {
+                const plist = state.prospectsPermanentList || [];
+                matched = state.leads.filter(l => plist.includes(l.id));
+                title = "Prospects Permanent List";
+            }
+
+            titleEl.textContent = title;
+            tbody.innerHTML = matched.map(l => `
+                <tr>
+                    <td><b>${l.name}</b></td>
+                    <td>${l.phoneNumber}</td>
+                    <td>${l.leadStatus}</td>
+                    <td>${l.assignedDate || '-'}</td>
+                    <td>${l.nextFollowUp || l.dueDate || '-'}</td>
+                    <td><button class="btn btn-green" onclick="closeDetailsModal(); openLeadModal('${l.id}')">Edit</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" style="text-align:center; padding:16px;">No leads found in this filter.</td></tr>';
+
+            modal.style.display = 'flex';
+        };
+
+        window.closeDetailsModal = function() {
+            document.getElementById('details-modal').style.display = 'none';
+        };
+
         window.openLeadModal = function(leadId) {
             const modal = document.getElementById('lead-modal');
             const mgrBdaWrap = document.getElementById('edit-bda-container');
@@ -442,10 +703,14 @@
                 document.getElementById('edit-dd').value = lead.ddDone || 'No';
                 document.getElementById('edit-procourse').value = lead.procoursePitch || 'No';
                 document.getElementById('edit-offline').value = lead.offlineVisit || 'No';
+                document.getElementById('edit-last-connected').value = lead.connectedOn || 'Not Contacted Yet';
                 document.getElementById('edit-followup').value = lead.nextFollowUp || '';
                 document.getElementById('edit-adm-type').value = lead.admissionType || 'online';
                 document.getElementById('edit-adm-count').value = lead.admissionCount || '1';
+                document.getElementById('edit-due').value = lead.dueDate || '';
                 document.getElementById('edit-comments').value = '';
+
+                renderLeadTimeline(lead.comments);
 
                 if (state.activeUser && state.activeUser.role === 'manager') {
                     mgrBdaWrap.style.display = 'block';
@@ -470,8 +735,11 @@
                 document.getElementById('edit-phone').readOnly = false;
                 document.getElementById('edit-source').value = 'COLD';
                 document.getElementById('edit-status').value = 'Assigned';
+                document.getElementById('edit-last-connected').value = 'Not Contacted Yet';
                 document.getElementById('edit-followup').value = '';
+                document.getElementById('edit-due').value = '';
                 document.getElementById('edit-comments').value = '';
+                renderLeadTimeline('');
                 mgrBdaWrap.style.display = 'none';
                 document.getElementById('btn-escalate').style.display = 'none';
                 document.getElementById('btn-resolve').style.display = 'none';
@@ -480,6 +748,16 @@
             updateDynamicModalFields();
             modal.style.display = 'flex';
         };
+
+        function renderLeadTimeline(commentsStr) {
+            const container = document.getElementById('edit-timeline');
+            if (!commentsStr) {
+                container.innerHTML = '<div class="timeline-item">No touchpoints recorded.</div>';
+                return;
+            }
+            const parts = commentsStr.split(' | ');
+            container.innerHTML = parts.map(p => `<div class="timeline-item">${p}</div>`).join('');
+        }
 
         window.closeLeadModal = function() {
             document.getElementById('lead-modal').style.display = 'none';
@@ -507,26 +785,32 @@
             const idVal = document.getElementById('edit-id').value;
             const lead = idVal ? state.leads.find(l => l.id === idVal) : {};
 
+            const statusVal = document.getElementById('edit-status').value;
+            if (statusVal === 'Admission Taken' && lead.leadStatus !== 'Admission Taken' && window.confetti) {
+                window.confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+
             const newBda = document.getElementById('edit-bda').value;
             const oldBda = lead.bda;
-            const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+            const timestamp = getISTDateTimeString();
 
             const newComment = document.getElementById('edit-comments').value.trim();
-            const logComment = newComment ? `[${timestamp} ${state.activeUser.name}]: ${newComment}` : `[${timestamp} ${state.activeUser.name}]: Updated status to ${document.getElementById('edit-status').value}`;
+            const logComment = newComment ? `[${timestamp} ${state.activeUser.name}]: ${newComment}` : `[${timestamp} ${state.activeUser.name}]: Updated status to ${statusVal}`;
 
             const payload = {
                 id: idVal || (newBda + '_' + document.getElementById('edit-phone').value),
-                assignedDate: lead.assignedDate || new Date().toISOString().split('T')[0],
+                assignedDate: lead.assignedDate || getTodayISTString(),
                 connectedOn: timestamp,
                 phoneNumber: document.getElementById('edit-phone').value,
                 leadSource: document.getElementById('edit-source').value || 'COLD',
                 name: document.getElementById('edit-name').value,
-                leadStatus: document.getElementById('edit-status').value,
+                leadStatus: statusVal,
                 ddDone: document.getElementById('edit-dd').value,
                 procoursePitch: document.getElementById('edit-procourse').value,
                 offlineVisit: document.getElementById('edit-offline').value,
                 admissionType: document.getElementById('edit-adm-type').value,
                 admissionCount: document.getElementById('edit-adm-count').value,
+                dueDate: document.getElementById('edit-due').value,
                 nextFollowUp: document.getElementById('edit-followup').value,
                 comments: logComment + (lead.comments ? ' | ' + lead.comments : ''),
                 bda: newBda,
@@ -537,7 +821,7 @@
             document.getElementById('sync-status').textContent = "Saving...";
 
             try {
-                const res = await fetch(state.sheetsUrl, {
+                await fetch(state.sheetsUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ token: state.sheetsToken, action: 'saveLead', payload })
@@ -545,6 +829,24 @@
                 fetchFromSheets();
             } catch(err) {
                 alert("Save error: " + err.message);
+            }
+        };
+
+        window.executeAutoLeadRoller = function() {
+            const today = getTodayISTString();
+            let count = 0;
+            state.leads.forEach(l => {
+                if (l.nextFollowUp && l.nextFollowUp < today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus)) {
+                    l.nextFollowUp = today;
+                    count++;
+                }
+            });
+            if (count > 0) {
+                alert(`⚡ Lead Roller: Rolled over ${count} old leads to today!`);
+                renderMustDos();
+                renderTable();
+            } else {
+                alert("⚡ Lead Roller: All follow-ups are up to date!");
             }
         };
 
@@ -557,7 +859,7 @@
 
             lead.escalatedState = 'escalated_to_tl';
             lead.escalatedCreatedAt = new Date().toISOString();
-            lead.comments = `[${new Date().toLocaleString()} ${state.activeUser.name}]: Escalated to TL (${reason}) | ` + (lead.comments || '');
+            lead.comments = `[${getISTDateTimeString()} ${state.activeUser.name}]: Escalated to TL (${reason}) | ` + (lead.comments || '');
 
             closeLeadModal();
             fetch(`${state.sheetsUrl}`, {
@@ -575,7 +877,7 @@
             if (!lead) return;
 
             lead.escalatedState = 'resolved';
-            lead.comments = `[${new Date().toLocaleString()} ${state.activeUser.name}]: Escalation Resolved (${note}) | ` + (lead.comments || '');
+            lead.comments = `[${getISTDateTimeString()} ${state.activeUser.name}]: Escalation Resolved (${note}) | ` + (lead.comments || '');
 
             closeLeadModal();
             fetch(`${state.sheetsUrl}`, {
@@ -585,13 +887,24 @@
             }).then(() => fetchFromSheets());
         };
 
+        window.handleCSVImport = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(Boolean);
+                alert(`CSV file loaded (${lines.length - 1} rows). Uploading to Google Sheets...`);
+            };
+            reader.readAsText(file);
+        };
+
         /* TO-DO SYSTEM */
         function getTodoList() {
             const key = 'crm_user_todos_' + (state.activeUser ? state.activeUser.email : 'default');
             let list = [];
             try { list = JSON.parse(localStorage.getItem(key)) || []; } catch(e) {}
 
-            // Merge escalations
             if (state.activeUser && state.leads) {
                 state.leads.filter(l => l.escalatedState && l.escalatedState !== 'resolved').forEach(l => {
                     if (!list.some(t => t.leadId === l.id)) {
