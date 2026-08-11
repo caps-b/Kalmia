@@ -4999,7 +4999,15 @@
 
         // GOOGLE SHEETS CONNECTION & API LAYER
         async function fetchFromSheets(targetBda = '') {
-            if (!state.sheetsUrl) return;
+            if (!state.sheetsUrl) {
+                const badgeText = document.getElementById('sync-status-text');
+                const badgeDot = document.getElementById('sync-status-dot');
+                if (badgeText) badgeText.textContent = "⚠️ No Sheets URL configured";
+                if (badgeDot) badgeDot.style.backgroundColor = "var(--accent-danger)";
+                console.error('[Sheets] fetchFromSheets called but state.sheetsUrl is empty! Check USER_SHEET_MAP or login flow.');
+                hideLoadingScreen();
+                return;
+            }
             
             const badgeText = document.getElementById('sync-status-text');
             const badgeDot = document.getElementById('sync-status-dot');
@@ -5013,15 +5021,16 @@
                 if (targetBda) {
                     targetUrl += `&bda=${encodeURIComponent(targetBda)}`;
                 }
+                console.log('[Sheets] Fetching:', targetUrl.replace(state.sheetsToken, '***TOKEN***'));
                 const response = await fetch(targetUrl);
                 if (!response.ok) {
-                    throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+                    throw new Error(`HTTP ${response.status} from Apps Script — check if Web App is deployed as "Anyone"`);
                 }
                 const contentType = response.headers.get("content-type") || "";
                 if (!contentType.includes("application/json")) {
                     const text = await response.text();
-                    console.error("Non-JSON Google Apps Script response received:", text.substring(0, 500));
-                    throw new Error("Google Web App returned HTML/Error instead of JSON. Ensure Web App is deployed as 'Anyone' and executed as 'Me'.");
+                    console.error("[Sheets] Non-JSON response from Apps Script:", text.substring(0, 800));
+                    throw new Error("Apps Script returned HTML not JSON. Deploy as Web App → Execute as 'Me' → Access 'Anyone'.");
                 }
                 const result = await response.json();
                 
@@ -5068,20 +5077,35 @@
                         renderStaffRoster();
                     }
                     
+                    console.log(`[Sheets] ✅ Loaded ${result.leads.length} leads from ${activeBdas.length} BDA sheet(s).`);
                     badgeText.textContent = targetBda ? `Live Sync (${targetBda})` : "Live Sheets Connected";
                     badgeDot.style.backgroundColor = "var(--accent-success)";
                     badgeDot.style.animation = "pulse-green 1.5s infinite";
                     
                     updateUI();
                 } else {
-                    throw new Error(result.message || "Failed to load data");
+                    console.error('[Sheets] Apps Script returned success:false. Message:', result.message);
+                    throw new Error(result.message || "Apps Script returned success:false");
                 }
             } catch (err) {
-                console.warn("Sheets sync operating in offline/cached mode:", err.message || err);
-                if (badgeText) badgeText.textContent = "Offline / Cache Mode";
+                const errMsg = err.message || String(err);
+                console.error("[Sheets] Sync FAILED:", errMsg);
+                console.error("[Sheets] URL used (token hidden):", state.sheetsUrl ? state.sheetsUrl.substring(0, 80) + '...' : 'NONE');
+                // Show diagnostic message in the badge
+                let shortErr = errMsg.length > 55 ? errMsg.substring(0, 55) + '...' : errMsg;
+                if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
+                    shortErr = '❌ Network error — check internet/CORS';
+                } else if (errMsg.includes('HTML not JSON') || errMsg.includes('returned HTML')) {
+                    shortErr = '❌ Script not deployed — redeploy as Web App';
+                } else if (errMsg.includes('Unauthorized')) {
+                    shortErr = '❌ Wrong token — check Sheet config';
+                } else if (errMsg.includes('HTTP 4')) {
+                    shortErr = '❌ HTTP error from Apps Script';
+                }
+                if (badgeText) badgeText.textContent = shortErr;
                 if (badgeDot) {
-                    badgeDot.style.backgroundColor = "var(--accent-warning)";
-                    badgeDot.style.animation = "pulse-amber 1.5s infinite";
+                    badgeDot.style.backgroundColor = "var(--accent-danger)";
+                    badgeDot.style.animation = "none";
                 }
                 updateUI();
             } finally {
