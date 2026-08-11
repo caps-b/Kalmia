@@ -5136,7 +5136,8 @@
                 const requestPayload = {
                     action: actionName,
                     token: state.sheetsToken,
-                    ...(typeof actionPayload === 'object' && actionPayload !== null ? actionPayload : { payload: actionPayload })
+                    payload: actionPayload,
+                    ...(typeof actionPayload === 'object' && actionPayload !== null ? actionPayload : {})
                 };
 
                 await fetch(targetUrl, {
@@ -8240,8 +8241,8 @@ function doPost(e) {
       return makeJsonResponse({ success: false, message: "Unauthorized token." });
     }
 
-    const action = body.action;
-    const payload = body.payload;
+    const action = body.action || "saveLead";
+    const payload = body.payload || body;
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
     if (action === "saveLead") {
@@ -8274,6 +8275,21 @@ function doPost(e) {
 
       sheet.appendRow(rowValues);
       
+      // Remove old BDA row if lead was reassigned
+      if (payload.oldBda && payload.oldBda !== payload.bda) {
+        try {
+          const oldSheet = ss.getSheetByName(payload.oldBda);
+          if (oldSheet && oldSheet.getLastRow() > 1) {
+            const oldData = oldSheet.getDataRange().getValues();
+            for (let r = oldData.length - 1; r >= 1; r--) {
+              if (String(oldData[r][2]).trim() === String(payload.phoneNumber).trim()) {
+                oldSheet.deleteRow(r + 1);
+              }
+            }
+          }
+        } catch(e) {}
+      }
+      
       if (payload.nextFollowUp) {
         try {
           syncCalendarEvent(ss, payload);
@@ -8289,10 +8305,7 @@ function doPost(e) {
     }
 
     if (action === "saveLeadsBulk") {
-      let leads = payload;
-      if (payload && !Array.isArray(payload) && Array.isArray(payload.leads)) {
-        leads = payload.leads;
-      }
+      let leads = (payload && Array.isArray(payload.leads)) ? payload.leads : (Array.isArray(payload) ? payload : (body.leads || []));
       const bdaGroups = {};
       
       leads.forEach(l => {
@@ -8300,6 +8313,21 @@ function doPost(e) {
           bdaGroups[l.bda] = [];
         }
         bdaGroups[l.bda].push(l);
+        
+        // Remove old BDA row if lead was reassigned
+        if (l.oldBda && l.oldBda !== l.bda) {
+          try {
+            const oldSheet = ss.getSheetByName(l.oldBda);
+            if (oldSheet && oldSheet.getLastRow() > 1) {
+              const oldData = oldSheet.getDataRange().getValues();
+              for (let r = oldData.length - 1; r >= 1; r--) {
+                if (String(oldData[r][2]).trim() === String(l.phoneNumber).trim()) {
+                  oldSheet.deleteRow(r + 1);
+                }
+              }
+            }
+          } catch(e) {}
+        }
       });
       
       for (const bda in bdaGroups) {
