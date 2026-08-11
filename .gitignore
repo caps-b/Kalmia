@@ -1,0 +1,4 @@
+node_modules/
+*.bak
+index_old.html*
+.DS_Store
