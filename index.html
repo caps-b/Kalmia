@@ -3648,7 +3648,7 @@
                         <div class="form-grid-2">
                             <div class="form-group">
                                 <label class="form-label">Lead Status</label>
-                                <select class="form-input" id="lead-edit-status" required>
+                                <select class="form-input" id="lead-edit-status" onchange="updateDynamicLeadFields()" required>
                                     <option value="Assigned">Assigned</option>
                                     <option value="Interested">Interested</option>
                                     <option value="Follow Up">Follow Up</option>
@@ -3664,76 +3664,81 @@
                             </div>
                         </div>
 
-                        <div class="form-grid-3">
-                            <div class="form-group">
-                                <label class="form-label">DD Done</label>
-                                <select class="form-input" id="lead-edit-dd">
-                                    <option value="No">No</option>
-                                    <option value="Yes">Yes</option>
-                                </select>
+                        <!-- DD / PROCOURSE / OFFLINE VISIT & FOLLOWUP GROUP (Interested / Follow Up / Assigned) -->
+                        <div id="lead-edit-dd-group" style="display:flex; flex-direction:column; gap:12px;">
+                            <div class="form-grid-3">
+                                <div class="form-group">
+                                    <label class="form-label">DD Done</label>
+                                    <select class="form-input" id="lead-edit-dd">
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Procourse Pitch</label>
+                                    <select class="form-input" id="lead-edit-procourse">
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Offline Visit</label>
+                                    <select class="form-input" id="lead-edit-offline">
+                                        <option value="No">No</option>
+                                        <option value="Scheduled">Scheduled</option>
+                                        <option value="Yes">Yes (Done)</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Procourse Pitch</label>
-                                <select class="form-input" id="lead-edit-procourse">
-                                    <option value="No">No</option>
-                                    <option value="Yes">Yes</option>
-                                </select>
+
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label" style="color:#a3f7be; font-weight:700;">📞 Last Connected Date</label>
+                                    <input class="form-input" type="text" id="lead-edit-last-connected" readonly style="background:rgba(255,255,255,0.03); color:#a3f7be; font-weight:700; cursor:default;" placeholder="Not Contacted Yet">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="color:var(--accent-warning); font-weight:700;">📅 Next Follow Up Date</label>
+                                    <input class="form-input" type="date" id="lead-edit-followup">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Offline Visit</label>
-                                <select class="form-input" id="lead-edit-offline">
-                                    <option value="No">No</option>
-                                    <option value="Scheduled">Scheduled</option>
-                                    <option value="Yes">Yes (Done)</option>
-                                </select>
+
+                            <div class="form-group" style="margin-top: 2px; background: rgba(29, 185, 84, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed var(--glass-border);">
+                                <label class="form-label" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin-bottom: 0;">
+                                    <input type="checkbox" id="lead-edit-gcal-checkbox" onchange="toggleGCalTimePicker()" style="width:16px; height:16px;">
+                                    <span style="font-weight: 600; color: var(--accent-primary);">Schedule Google Calendar Event</span>
+                                </label>
+                                <div id="gcal-time-picker-container" style="display: none; margin-top: 8px;">
+                                    <label class="form-label" style="font-size: 12px;">Choose Event Date & Time:</label>
+                                    <input class="form-input" type="datetime-local" id="lead-edit-gcal-time">
+                                </div>
                             </div>
                         </div>
 
-                        <div class="form-grid-3">
-                            <div class="form-group">
-                                <label class="form-label">Admission Type</label>
-                                <select class="form-input" id="lead-edit-admission-type">
-                                    <option value="online">Online</option>
-                                    <option value="offline">Offline</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Admission Count (Up to 6)</label>
-                                <select class="form-input" id="lead-edit-admission-count">
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                </select>
-                            </div>
-
-                        </div>
-
-                        <div class="form-grid-3">
-                            <div class="form-group">
-                                <label class="form-label" style="color:#a3f7be; font-weight:700;">📞 Last Connected Date</label>
-                                <input class="form-input" type="text" id="lead-edit-last-connected" readonly style="background:rgba(255,255,255,0.03); color:#a3f7be; font-weight:700; cursor:default;" placeholder="Not Contacted Yet">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Admission Due Date</label>
-                                <input class="form-input" type="date" id="lead-edit-due">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" style="color:var(--accent-warning); font-weight:700;">📅 Next Follow Up Date</label>
-                                <input class="form-input" type="date" id="lead-edit-followup">
-                            </div>
-                        </div>
-
-                        <div class="form-group" style="margin-top: 10px; background: rgba(29, 185, 84, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed var(--glass-border);">
-                            <label class="form-label" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin-bottom: 0;">
-                                <input type="checkbox" id="lead-edit-gcal-checkbox" onchange="toggleGCalTimePicker()" style="width:16px; height:16px;">
-                                <span style="font-weight: 600; color: var(--accent-primary);">Schedule Google Calendar Event</span>
-                            </label>
-                            <div id="gcal-time-picker-container" style="display: none; margin-top: 8px;">
-                                <label class="form-label" style="font-size: 12px;">Choose Event Date & Time:</label>
-                                <input class="form-input" type="datetime-local" id="lead-edit-gcal-time">
+                        <!-- ADMISSION DETAILS GROUP (Admission Taken) -->
+                        <div id="lead-edit-admission-group" style="display:none; flex-direction:column; gap:12px; background:rgba(29,185,84,0.05); padding:12px; border-radius:8px; border:1px solid rgba(29,185,84,0.2);">
+                            <div class="form-grid-3">
+                                <div class="form-group">
+                                    <label class="form-label" style="color:var(--accent-primary); font-weight:700;">🎓 Admission Type</label>
+                                    <select class="form-input" id="lead-edit-admission-type" style="font-weight:700;">
+                                        <option value="online">Online</option>
+                                        <option value="offline">Offline</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="color:var(--accent-primary); font-weight:700;">🔢 Admission Count (1-6)</label>
+                                    <select class="form-input" id="lead-edit-admission-count" style="font-weight:700;">
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="color:var(--accent-primary); font-weight:700;">📅 Admission Due Date</label>
+                                    <input class="form-input" type="date" id="lead-edit-due">
+                                </div>
                             </div>
                         </div>
 
@@ -7769,8 +7774,31 @@
                 renderLeadTimeline('');
             }
 
+            updateDynamicLeadFields();
             document.getElementById('lead-editor-modal').classList.add('active');
         }
+
+        function updateDynamicLeadFields() {
+            const statusSelect = document.getElementById('lead-edit-status');
+            if (!statusSelect) return;
+            const statusVal = statusSelect.value;
+
+            const ddGroup = document.getElementById('lead-edit-dd-group');
+            const admissionGroup = document.getElementById('lead-edit-admission-group');
+
+            if (statusVal === 'Admission Taken') {
+                if (ddGroup) ddGroup.style.display = 'none';
+                if (admissionGroup) admissionGroup.style.display = 'flex';
+            } else if (['Interested', 'Follow Up', 'Assigned'].includes(statusVal)) {
+                if (ddGroup) ddGroup.style.display = 'flex';
+                if (admissionGroup) admissionGroup.style.display = 'none';
+            } else {
+                // Not Interested, Dead, Not Answering, etc. -> hide both extra sections
+                if (ddGroup) ddGroup.style.display = 'none';
+                if (admissionGroup) admissionGroup.style.display = 'none';
+            }
+        }
+        window.updateDynamicLeadFields = updateDynamicLeadFields;
 
         function openNewLeadModal() {
             openLeadModal('');
