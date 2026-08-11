@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalmia CRM (Lite Speed Version)</title>
+    <style>
+        :root {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --border-color: #475569;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #22c55e;
+            --accent-blue: #3b82f6;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg-body); color: var(--text-main); font-size: 13px; line-height: 1.4; padding: 10px; }
+        
+        /* HEADER & TOP BAR */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+        .logo { font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px; }
+        .badge-lite { background: var(--accent-blue); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+        .btn { background: var(--bg-input); color: #fff; border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .btn:hover { opacity: 0.9; }
+        .btn-green { background: #166534; border-color: #22c55e; color: #86efac; }
+        .btn-amber { background: #78350f; border-color: #f59e0b; color: #fde68a; }
+        .btn-red { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
+
+        /* STATS GRID */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 10px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 6px; text-align: center; }
+        .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+        .stat-val { font-size: 18px; font-weight: 800; margin-top: 2px; }
+
+        /* CONTROLS BAR */
+        .controls { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; background: var(--bg-card); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .input { background: var(--bg-input); color: #fff; border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+        .input:focus { outline: none; border-color: var(--accent-blue); }
+        select.input { cursor: pointer; }
+
+        /* TABLE */
+        .table-wrap { overflow-x: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; max-height: 70vh; }
+        table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; font-size: 12px; }
+        th { background: #0f172a; position: sticky; top: 0; z-index: 10; padding: 8px 10px; border-bottom: 1px solid var(--border-color); color: var(--text-muted); }
+        td { padding: 8px 10px; border-bottom: 1px solid #334155; }
+        tr:hover { background: #334155; }
+        .status-badge { padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 999; padding: 10px; }
+        .modal { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 14px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        @media(max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+
+        /* LOGIN SCREEN */
+        #login-screen { position: fixed; inset: 0; background: var(--bg-body); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 10px; }
+        .login-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 24px; width: 100%; max-width: 360px; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <h2 style="margin-bottom:12px; font-size:18px;">⚡ Kalmia CRM (Lite)</h2>
+            <p style="color:var(--text-muted); font-size:11px; margin-bottom:16px;">Fast, Low-RAM CRM View</p>
+            <form onsubmit="handleLiteLogin(event)">
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Work Email</label>
+                    <input class="input" type="email" id="login-email" required placeholder="e.g. bda@kalmia.in">
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label>Password</label>
+                    <input class="input" type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-green" style="width:100%; justify-content:center; padding:8px;">Log In (Lite Speed)</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT -->
+    <header>
+        <div class="logo">
+            ⚡ Kalmia CRM <span class="badge-lite">Lite (Low RAM)</span>
+            <span id="sync-status" style="font-size:11px; color:var(--accent-amber);">Connecting...</span>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-amber" onclick="toggleTodoDrawer()">📋 To-Do (<span id="todo-count">0</span>)</button>
+            <button class="btn btn-green" onclick="openLeadModal('')">➕ New Lead</button>
+            <a href="index.html" class="btn">🚀 Pro Version</a>
+            <button class="btn btn-red" onclick="handleLogout()">Log Out</button>
+        </div>
+    </header>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Leads</div><div class="stat-val" id="st-total">0</div></div>
+        <div class="stat-card"><div class="stat-label">Connected</div><div class="stat-val" id="st-connected" style="color:var(--accent-blue);">0</div></div>
+        <div class="stat-card"><div class="stat-label">Interested</div><div class="stat-val" id="st-interested" style="color:var(--accent-green);">0</div></div>
+        <div class="stat-card"><div class="stat-label">Follow Up</div><div class="stat-val" id="st-followup" style="color:var(--accent-amber);">0</div></div>
+        <div class="stat-card"><div class="stat-label">Admissions</div><div class="stat-val" id="st-admission" style="color:var(--accent-green);">0</div></div>
+        <div class="stat-card"><div class="stat-label">🎯 Needed</div><div class="stat-val" id="st-needed" style="color:var(--accent-red);">0</div></div>
+    </div>
+
+    <!-- CONTROLS & SEARCH -->
+    <div class="controls">
+        <input class="input" type="text" id="search-input" placeholder="🔍 Search name, phone..." oninput="renderTable()" style="flex:1; min-width:140px;">
+        <select class="input" id="status-filter" onchange="renderTable()">
+            <option value="ALL">All Statuses</option>
+            <option value="Assigned">Assigned</option>
+            <option value="Interested">Interested</option>
+            <option value="Follow Up">Follow Up</option>
+            <option value="Admission Taken">Admission Taken</option>
+            <option value="Not Answering">Not Answering</option>
+            <option value="Not Interested">Not Interested</option>
+            <option value="Dead">Dead</option>
+        </select>
+        <select class="input" id="bda-filter" onchange="renderTable()" style="display:none;"></select>
+        <button class="btn" onclick="fetchFromSheets()">🔄 Refresh Data</button>
+    </div>
+
+    <!-- LEADS TABLE -->
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Lead Name</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th>Assigned Date</th>
+                    <th>Follow Up</th>
+                    <th>BDE</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="leads-tbody">
+                <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Loading data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- EDIT / CREATE LEAD MODAL -->
+    <div class="modal-overlay" id="lead-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title" style="font-size:14px;">Edit Lead</h3>
+                <button class="btn" onclick="closeLeadModal()">✕</button>
+            </div>
+            <form onsubmit="handleLeadSubmit(event)">
+                <input type="hidden" id="edit-id">
+                <input type="hidden" id="edit-bda">
+
+                <!-- MANAGER REASSIGN BDE -->
+                <div class="form-group" id="edit-bda-container" style="display:none; margin-bottom:10px;">
+                    <label style="color:var(--accent-amber);">🔄 Assigned BDE (Reassign):</label>
+                    <select class="input" id="edit-bda-select" onchange="document.getElementById('edit-bda').value = this.value;"></select>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group"><label>Lead Name</label><input class="input" id="edit-name" required></div>
+                    <div class="form-group"><label>Phone Number</label><input class="input" id="edit-phone" required></div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group"><label>Lead Source</label><input class="input" id="edit-source"></div>
+                    <div class="form-group">
+                        <label>Lead Status</label>
+                        <select class="input" id="edit-status" onchange="updateDynamicModalFields()" required>
+                            <option value="Assigned">Assigned</option>
+                            <option value="Interested">Interested</option>
+                            <option value="Follow Up">Follow Up</option>
+                            <option value="Admission Taken">Admission Taken</option>
+                            <option value="Not Answering (WhatsApp Connected)">Not Answering</option>
+                            <option value="Not Interested">Not Interested</option>
+                            <option value="Dead">Dead</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- DD & FOLLOW UP GROUP (Interested / Follow Up / Assigned) -->
+                <div id="group-dd" style="display:flex; flex-direction:column; gap:10px; margin-bottom:10px;">
+                    <div class="form-grid">
+                        <div class="form-group"><label>DD Done</label><select class="input" id="edit-dd"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                        <div class="form-group"><label>Procourse Pitch</label><select class="input" id="edit-procourse"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Offline Visit</label><select class="input" id="edit-offline"><option value="No">No</option><option value="Scheduled">Scheduled</option><option value="Yes">Yes</option></select></div>
+                        <div class="form-group"><label>Next Follow Up Date</label><input class="input" type="date" id="edit-followup"></div>
+                    </div>
+                </div>
+
+                <!-- ADMISSION GROUP (Admission Taken) -->
+                <div id="group-admission" style="display:none; flex-direction:column; gap:10px; margin-bottom:10px;">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Admission Type</label><select class="input" id="edit-adm-type"><option value="online">Online</option><option value="offline">Offline</option></select></div>
+                        <div class="form-group"><label>Admission Count</label><select class="input" id="edit-adm-count"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Log New Comment / Interaction</label>
+                    <textarea class="input" id="edit-comments" rows="3" placeholder="Type new interaction comment..."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <div>
+                        <button type="button" id="btn-escalate" class="btn btn-red" style="display:none;" onclick="triggerEscalation()">⚠️ Escalate to TL</button>
+                        <button type="button" id="btn-resolve" class="btn btn-green" style="display:none;" onclick="triggerResolveEscalation()">✓ Resolve Escalation</button>
+                    </div>
+                    <button type="submit" class="btn btn-green">Save Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TO-DO DRAWER -->
+    <div class="modal-overlay" id="todo-modal">
+        <div class="modal" style="max-width:480px;">
+            <div class="modal-header">
+                <h3>📋 To-Do List & Escalations</h3>
+                <button class="btn" onclick="toggleTodoDrawer()">✕</button>
+            </div>
+            <div style="display:flex; gap:6px; margin-bottom:10px;">
+                <input class="input" type="text" id="todo-new-input" placeholder="Type new task..." style="flex:1;">
+                <button class="btn btn-green" onclick="addTodoTask()">Add</button>
+            </div>
+            <div id="todo-list-container" style="display:flex; flex-direction:column; gap:6px; max-height:50vh; overflow-y:auto;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const USER_SHEET_MAP = {
+            "sthitin@kalmia.in": { url: "https://script.google.com/macros/s/AKfycbwWvT4ixmdnt2eUYkNKAASpwweZwWF5ROm7Q69AfFpUcfCTnyTDczb2TTM2AH6bgzrGLA/exec", token: "Kochiteam20" },
+            "binulal@kalmia.in": { url: "https://script.google.com/macros/s/AKfycbyWzubsGC-HrnNqJZG6Afzz-0-Rw5UlQmoLn467hs5JzjdXt5svalPYvsCVeudYgPdvmA/exec", token: "Kochiteam23" },
+            "sreelakshmi@kalmia.in": { url: "https://script.google.com/macros/s/AKfycbyNMh2S8NpOWYrVRlXULoPdDsl-XxI58mUyEF5nCYbGiQ88vluoyHPbXQdkp1Wr1bFTWQ/exec", token: "alappuzhateam" }
+        };
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPDVuJSwTt6C2s_XxZH1PDiJDcd6uWdyQ",
+            authDomain: "lead-sync-pro.firebaseapp.com",
+            projectId: "lead-sync-pro",
+            storageBucket: "lead-sync-pro.firebasestorage.app",
+            messagingSenderId: "594245664815",
+            appId: "1:594245664815:web:3164004ba78cf9e48bc6da"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const state = {
+            activeUser: null,
+            sheetsUrl: "",
+            sheetsToken: "",
+            leads: [],
+            passwords: {},
+            bdaRoster: []
+        };
+
+        window.state = state;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const email = user.email.toLowerCase().trim();
+                let conf = USER_SHEET_MAP[email];
+                if (!conf && email.includes('@')) {
+                    const domain = email.split('@')[1];
+                    const managerEmail = domain === 'kalmia.in' ? 'sthitin@kalmia.in' : 'sthitin@kalmia.in';
+                    conf = USER_SHEET_MAP[managerEmail];
+                }
+                state.sheetsUrl = conf ? conf.url : "";
+                state.sheetsToken = conf ? conf.token : "";
+                state.activeUser = {
+                    email: email,
+                    name: email.split('@')[0],
+                    role: (email === 'binulal@kalmia.in' || email === 'sthitin@kalmia.in' || email === 'sreelakshmi@kalmia.in') ? 'manager' : 'bda'
+                };
+                document.getElementById('login-screen').style.display = 'none';
+                fetchFromSheets();
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+            }
+        });
+
+        window.handleLiteLogin = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const pwd = document.getElementById('login-password').value.trim();
+            try {
+                await signInWithEmailAndPassword(auth, email, pwd);
+            } catch(err) {
+                alert("Login failed: " + err.message);
+            }
+        };
+
+        window.handleLogout = function() {
+            signOut(auth).then(() => location.reload());
+        };
+
+        window.fetchFromSheets = async function() {
+            const statusEl = document.getElementById('sync-status');
+            if (!state.sheetsUrl) {
+                statusEl.textContent = "⚠️ No Sheets URL";
+                return;
+            }
+            statusEl.textContent = "Syncing...";
+            try {
+                const res = await fetch(`${state.sheetsUrl}?action=getData&token=${encodeURIComponent(state.sheetsToken)}`);
+                const data = await res.json();
+                if (data.success) {
+                    state.leads = data.leads || [];
+                    state.passwords = data.passwords || {};
+                    state.bdaRoster = data.bdas || [];
+                    statusEl.textContent = "🟢 Live Connected";
+                    statusEl.style.color = "var(--accent-green)";
+                    setupBdaFilter();
+                    renderStats();
+                    renderTable();
+                    updateTodoBadge();
+                } else {
+                    statusEl.textContent = "❌ " + data.message;
+                }
+            } catch(err) {
+                statusEl.textContent = "❌ Offline / Error";
+                console.error(err);
+            }
+        };
+
+        function setupBdaFilter() {
+            const bdaSelect = document.getElementById('bda-filter');
+            if (state.activeUser && state.activeUser.role === 'manager') {
+                bdaSelect.style.display = 'inline-block';
+                let html = '<option value="ALL">All BDAs</option>';
+                state.bdaRoster.forEach(b => html += `<option value="${b}">${b}</option>`);
+                bdaSelect.innerHTML = html;
+            } else {
+                bdaSelect.style.display = 'none';
+            }
+        }
+
+        function renderStats() {
+            const total = state.leads.length;
+            const connected = state.leads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)).length;
+            const interested = state.leads.filter(l => l.leadStatus === 'Interested').length;
+            const followup = state.leads.filter(l => l.leadStatus === 'Follow Up').length;
+            
+            let admissions = 0;
+            state.leads.forEach(l => {
+                if (l.leadStatus === 'Admission Taken') admissions += (parseInt(l.admissionCount) || 1);
+            });
+
+            const target = (state.activeUser && state.activeUser.role === 'manager') ? (state.bdaRoster.length * 15) : 15;
+            const needed = Math.max(0, target - admissions);
+
+            document.getElementById('st-total').textContent = total;
+            document.getElementById('st-connected').textContent = connected;
+            document.getElementById('st-interested').textContent = interested;
+            document.getElementById('st-followup').textContent = followup;
+            document.getElementById('st-admission').textContent = admissions;
+            document.getElementById('st-needed').textContent = needed;
+        }
+
+        window.renderTable = function() {
+            const tbody = document.getElementById('leads-tbody');
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+            const statusF = document.getElementById('status-filter').value;
+            const bdaF = document.getElementById('bda-filter').value;
+
+            let list = state.leads;
+
+            if (state.activeUser && state.activeUser.role !== 'manager') {
+                const uName = state.activeUser.name.toLowerCase();
+                list = list.filter(l => String(l.bda || '').toLowerCase().includes(uName));
+            } else if (bdaF !== 'ALL') {
+                list = list.filter(l => l.bda === bdaF);
+            }
+
+            if (statusF !== 'ALL') {
+                list = list.filter(l => l.leadStatus === statusF || (statusF === 'Not Answering' && String(l.leadStatus).includes('Not Answering')));
+            }
+
+            if (search) {
+                list = list.filter(l => (l.name || '').toLowerCase().includes(search) || (l.phoneNumber || '').includes(search));
+            }
+
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">No matching leads found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.slice(0, 100).map(l => {
+                let badgeCol = "var(--text-muted)";
+                if (l.leadStatus === 'Interested') badgeCol = "var(--accent-green)";
+                else if (l.leadStatus === 'Follow Up') badgeCol = "var(--accent-amber)";
+                else if (l.leadStatus === 'Admission Taken') badgeCol = "var(--accent-green)";
+                else if (l.leadStatus === 'Dead') badgeCol = "var(--accent-red)";
+
+                const isEsc = l.escalatedState && l.escalatedState !== 'resolved';
+
+                return `
+                    <tr style="${isEsc ? 'background:rgba(239,68,68,0.15);' : ''}">
+                        <td><b>${l.name}</b> ${isEsc ? '⚠️' : ''}</td>
+                        <td>${l.phoneNumber}</td>
+                        <td><span class="status-badge" style="color:${badgeCol}; border:1px solid ${badgeCol};">${l.leadStatus}</span></td>
+                        <td>${l.leadSource || 'COLD'}</td>
+                        <td>${l.assignedDate || '-'}</td>
+                        <td>${l.nextFollowUp || '-'}</td>
+                        <td>${l.bda || '-'}</td>
+                        <td><button class="btn btn-green" onclick="openLeadModal('${l.id}')">Edit</button></td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        window.openLeadModal = function(leadId) {
+            const modal = document.getElementById('lead-modal');
+            const mgrBdaWrap = document.getElementById('edit-bda-container');
+            const mgrBdaSelect = document.getElementById('edit-bda-select');
+
+            if (leadId) {
+                const lead = state.leads.find(l => l.id === leadId);
+                if (!lead) return;
+
+                document.getElementById('modal-title').textContent = "Edit Lead - " + lead.name;
+                document.getElementById('edit-id').value = lead.id;
+                document.getElementById('edit-bda').value = lead.bda;
+                document.getElementById('edit-name').value = lead.name;
+                document.getElementById('edit-phone').value = lead.phoneNumber;
+                document.getElementById('edit-phone').readOnly = true;
+                document.getElementById('edit-source').value = lead.leadSource || 'COLD';
+                document.getElementById('edit-status').value = lead.leadStatus || 'Assigned';
+                document.getElementById('edit-dd').value = lead.ddDone || 'No';
+                document.getElementById('edit-procourse').value = lead.procoursePitch || 'No';
+                document.getElementById('edit-offline').value = lead.offlineVisit || 'No';
+                document.getElementById('edit-followup').value = lead.nextFollowUp || '';
+                document.getElementById('edit-adm-type').value = lead.admissionType || 'online';
+                document.getElementById('edit-adm-count').value = lead.admissionCount || '1';
+                document.getElementById('edit-comments').value = '';
+
+                if (state.activeUser && state.activeUser.role === 'manager') {
+                    mgrBdaWrap.style.display = 'block';
+                    let bList = state.bdaRoster.length > 0 ? state.bdaRoster : Object.values(state.passwords).map(p => p.sheetName).filter(Boolean);
+                    mgrBdaSelect.innerHTML = bList.map(b => `<option value="${b}" ${b === lead.bda ? 'selected' : ''}>${b}</option>`).join('');
+                } else {
+                    mgrBdaWrap.style.display = 'none';
+                }
+
+                // Escalation buttons
+                const isEsc = lead.escalatedState && lead.escalatedState !== 'resolved';
+                const isMgr = state.activeUser && state.activeUser.role === 'manager';
+                document.getElementById('btn-escalate').style.display = (!isMgr && !isEsc) ? 'inline-flex' : 'none';
+                document.getElementById('btn-resolve').style.display = (isMgr && isEsc) ? 'inline-flex' : 'none';
+
+            } else {
+                document.getElementById('modal-title').textContent = "Create New Lead";
+                document.getElementById('edit-id').value = '';
+                document.getElementById('edit-bda').value = state.activeUser ? state.activeUser.name : '';
+                document.getElementById('edit-name').value = '';
+                document.getElementById('edit-phone').value = '';
+                document.getElementById('edit-phone').readOnly = false;
+                document.getElementById('edit-source').value = 'COLD';
+                document.getElementById('edit-status').value = 'Assigned';
+                document.getElementById('edit-followup').value = '';
+                document.getElementById('edit-comments').value = '';
+                mgrBdaWrap.style.display = 'none';
+                document.getElementById('btn-escalate').style.display = 'none';
+                document.getElementById('btn-resolve').style.display = 'none';
+            }
+
+            updateDynamicModalFields();
+            modal.style.display = 'flex';
+        };
+
+        window.closeLeadModal = function() {
+            document.getElementById('lead-modal').style.display = 'none';
+        };
+
+        window.updateDynamicModalFields = function() {
+            const st = document.getElementById('edit-status').value;
+            const grpDd = document.getElementById('group-dd');
+            const grpAdm = document.getElementById('group-admission');
+
+            if (st === 'Admission Taken') {
+                grpDd.style.display = 'none';
+                grpAdm.style.display = 'flex';
+            } else if (['Interested', 'Follow Up', 'Assigned'].includes(st)) {
+                grpDd.style.display = 'flex';
+                grpAdm.style.display = 'none';
+            } else {
+                grpDd.style.display = 'none';
+                grpAdm.style.display = 'none';
+            }
+        };
+
+        window.handleLeadSubmit = async function(e) {
+            e.preventDefault();
+            const idVal = document.getElementById('edit-id').value;
+            const lead = idVal ? state.leads.find(l => l.id === idVal) : {};
+
+            const newBda = document.getElementById('edit-bda').value;
+            const oldBda = lead.bda;
+            const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+
+            const newComment = document.getElementById('edit-comments').value.trim();
+            const logComment = newComment ? `[${timestamp} ${state.activeUser.name}]: ${newComment}` : `[${timestamp} ${state.activeUser.name}]: Updated status to ${document.getElementById('edit-status').value}`;
+
+            const payload = {
+                id: idVal || (newBda + '_' + document.getElementById('edit-phone').value),
+                assignedDate: lead.assignedDate || new Date().toISOString().split('T')[0],
+                connectedOn: timestamp,
+                phoneNumber: document.getElementById('edit-phone').value,
+                leadSource: document.getElementById('edit-source').value || 'COLD',
+                name: document.getElementById('edit-name').value,
+                leadStatus: document.getElementById('edit-status').value,
+                ddDone: document.getElementById('edit-dd').value,
+                procoursePitch: document.getElementById('edit-procourse').value,
+                offlineVisit: document.getElementById('edit-offline').value,
+                admissionType: document.getElementById('edit-adm-type').value,
+                admissionCount: document.getElementById('edit-adm-count').value,
+                nextFollowUp: document.getElementById('edit-followup').value,
+                comments: logComment + (lead.comments ? ' | ' + lead.comments : ''),
+                bda: newBda,
+                oldBda: (oldBda && oldBda !== newBda) ? oldBda : undefined
+            };
+
+            closeLeadModal();
+            document.getElementById('sync-status').textContent = "Saving...";
+
+            try {
+                const res = await fetch(state.sheetsUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ token: state.sheetsToken, action: 'saveLead', payload })
+                });
+                fetchFromSheets();
+            } catch(err) {
+                alert("Save error: " + err.message);
+            }
+        };
+
+        window.triggerEscalation = function() {
+            const reason = prompt("Enter escalation reason:");
+            if (!reason) return;
+            const idVal = document.getElementById('edit-id').value;
+            const lead = state.leads.find(l => l.id === idVal);
+            if (!lead) return;
+
+            lead.escalatedState = 'escalated_to_tl';
+            lead.escalatedCreatedAt = new Date().toISOString();
+            lead.comments = `[${new Date().toLocaleString()} ${state.activeUser.name}]: Escalated to TL (${reason}) | ` + (lead.comments || '');
+
+            closeLeadModal();
+            fetch(`${state.sheetsUrl}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ token: state.sheetsToken, action: 'saveLead', payload: lead })
+            }).then(() => fetchFromSheets());
+        };
+
+        window.triggerResolveEscalation = function() {
+            const note = prompt("Enter resolution note:");
+            if (!note) return;
+            const idVal = document.getElementById('edit-id').value;
+            const lead = state.leads.find(l => l.id === idVal);
+            if (!lead) return;
+
+            lead.escalatedState = 'resolved';
+            lead.comments = `[${new Date().toLocaleString()} ${state.activeUser.name}]: Escalation Resolved (${note}) | ` + (lead.comments || '');
+
+            closeLeadModal();
+            fetch(`${state.sheetsUrl}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ token: state.sheetsToken, action: 'saveLead', payload: lead })
+            }).then(() => fetchFromSheets());
+        };
+
+        /* TO-DO SYSTEM */
+        function getTodoList() {
+            const key = 'crm_user_todos_' + (state.activeUser ? state.activeUser.email : 'default');
+            let list = [];
+            try { list = JSON.parse(localStorage.getItem(key)) || []; } catch(e) {}
+
+            // Merge escalations
+            if (state.activeUser && state.leads) {
+                state.leads.filter(l => l.escalatedState && l.escalatedState !== 'resolved').forEach(l => {
+                    if (!list.some(t => t.leadId === l.id)) {
+                        list.unshift({ id: 'esc_' + l.id, text: `⚠️ Escalation: ${l.name} (${l.phoneNumber})`, done: false, leadId: l.id });
+                    }
+                });
+            }
+            return list;
+        }
+
+        function updateTodoBadge() {
+            const list = getTodoList();
+            const count = list.filter(t => !t.done).length;
+            document.getElementById('todo-count').textContent = count;
+        }
+
+        window.toggleTodoDrawer = function() {
+            const modal = document.getElementById('todo-modal');
+            const isVis = modal.style.display === 'flex';
+            modal.style.display = isVis ? 'none' : 'flex';
+            if (!isVis) renderTodoList();
+        };
+
+        function renderTodoList() {
+            const container = document.getElementById('todo-list-container');
+            const list = getTodoList();
+            updateTodoBadge();
+
+            if (list.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:10px;">No tasks.</div>';
+                return;
+            }
+
+            container.innerHTML = list.map((t, idx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:var(--bg-input); border-radius:6px; ${t.id.startsWith('esc_') ? 'border:1px solid var(--accent-red);' : ''}">
+                    <span style="${t.done ? 'text-decoration:line-through; color:var(--text-muted);' : ''} ${t.leadId ? 'cursor:pointer; color:var(--accent-amber); font-weight:700;' : ''}" ${t.leadId ? `onclick="toggleTodoDrawer(); openLeadModal('${t.leadId}')"` : ''}>${t.text}</span>
+                    <button class="btn" style="padding:2px 6px; font-size:10px;" onclick="deleteTodo(${idx})">✕</button>
+                </div>
+            `).join('');
+        }
+
+        window.addTodoTask = function() {
+            const input = document.getElementById('todo-new-input');
+            const val = input.value.trim();
+            if (!val) return;
+            const list = getTodoList();
+            list.unshift({ id: 't_' + Date.now(), text: val, done: false });
+            const key = 'crm_user_todos_' + (state.activeUser ? state.activeUser.email : 'default');
+            localStorage.setItem(key, JSON.stringify(list));
+            input.value = '';
+            renderTodoList();
+        };
+
+        window.deleteTodo = function(idx) {
+            const list = getTodoList();
+            list.splice(idx, 1);
+            const key = 'crm_user_todos_' + (state.activeUser ? state.activeUser.email : 'default');
+            localStorage.setItem(key, JSON.stringify(list));
+            renderTodoList();
+        };
+    </script>
+</body>
+</html>
