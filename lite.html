@@ -537,6 +537,35 @@
             }
         };
 
+        function isBdaOwnerMatch(leadBda, filterBda) {
+            if (!leadBda || !filterBda) return false;
+            const cleanLead = String(leadBda).toLowerCase().replace(/\d+$/, '').trim();
+            const cleanFilter = String(filterBda).toLowerCase().replace(/\d+$/, '').trim();
+            return cleanLead === cleanFilter;
+        }
+
+        function getBdaFilteredLeads() {
+            if (!state.leads) return [];
+            if (!state.activeUser) return state.leads;
+
+            // Manager view: show all or filter by selected bda-filter
+            if (state.activeUser.role === 'manager') {
+                const bdaF = document.getElementById('bda-filter') ? document.getElementById('bda-filter').value : 'ALL';
+                if (bdaF && bdaF !== 'ALL') {
+                    return state.leads.filter(l => isBdaOwnerMatch(l.bda, bdaF));
+                }
+                return state.leads;
+            }
+
+            // BDE / BDA view: filter strictly by logged-in BDE's sheetName or account name
+            let myBdaName = state.activeUser.sheetName || state.activeUser.name;
+            if (state.passwords && state.activeUser.email && state.passwords[state.activeUser.email]) {
+                myBdaName = state.passwords[state.activeUser.email].sheetName || myBdaName;
+            }
+
+            return state.leads.filter(l => isBdaOwnerMatch(l.bda, myBdaName));
+        }
+
         function setupFilters() {
             const bdaSelect = document.getElementById('bda-filter');
             if (state.activeUser && state.activeUser.role === 'manager') {
@@ -548,7 +577,8 @@
                 bdaSelect.style.display = 'none';
             }
 
-            const sources = Array.from(new Set(state.leads.map(l => (l.leadSource || 'COLD').trim()))).filter(Boolean);
+            const myLeads = getBdaFilteredLeads();
+            const sources = Array.from(new Set(myLeads.map(l => (l.leadSource || 'COLD').trim()))).filter(Boolean);
             const srcSelect = document.getElementById('source-filter');
             const editSrcSelect = document.getElementById('edit-source');
             let sHtml = '<option value="ALL">All Sources</option>';
@@ -562,20 +592,21 @@
         }
 
         function renderStats() {
-            const total = state.leads.length;
-            const calls = state.leads.filter(l => l.connectedOn && l.connectedOn.trim() !== '').length;
-            const connected = state.leads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)).length;
-            const dd = state.leads.filter(l => l.ddDone && String(l.ddDone).toLowerCase() === 'yes').length;
-            const interested = state.leads.filter(l => l.leadStatus === 'Interested').length;
-            const followup = state.leads.filter(l => l.leadStatus === 'Follow Up').length;
+            const myLeads = getBdaFilteredLeads();
+            const total = myLeads.length;
+            const calls = myLeads.filter(l => l.connectedOn && l.connectedOn.trim() !== '').length;
+            const connected = myLeads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)).length;
+            const dd = myLeads.filter(l => l.ddDone && String(l.ddDone).toLowerCase() === 'yes').length;
+            const interested = myLeads.filter(l => l.leadStatus === 'Interested').length;
+            const followup = myLeads.filter(l => l.leadStatus === 'Follow Up').length;
             
             let admissions = 0;
-            state.leads.forEach(l => {
+            myLeads.forEach(l => {
                 if (l.leadStatus === 'Admission Taken') admissions += (parseInt(l.admissionCount) || 1);
             });
 
-            const notanswering = state.leads.filter(l => String(l.leadStatus).includes('Not Answering')).length;
-            const dead = state.leads.filter(l => ['Dead','No Incoming'].includes(l.leadStatus)).length;
+            const notanswering = myLeads.filter(l => String(l.leadStatus).includes('Not Answering')).length;
+            const dead = myLeads.filter(l => ['Dead','No Incoming'].includes(l.leadStatus)).length;
 
             const target = (state.activeUser && state.activeUser.role === 'manager') ? (state.bdaRoster.length * 15) : 15;
             const needed = Math.max(0, target - admissions);
@@ -595,10 +626,12 @@
 
         function renderGamification() {
             const today = getTodayISTString();
-            const connToday = state.leads.filter(l => l.connectedOn && l.connectedOn.startsWith(today)).length;
-            const ddToday = state.leads.filter(l => l.ddDone === 'Yes' && l.connectedOn && l.connectedOn.startsWith(today)).length;
-            const pitchToday = state.leads.filter(l => l.procoursePitch === 'Yes' && l.connectedOn && l.connectedOn.startsWith(today)).length;
-            const visadmToday = state.leads.filter(l => (l.offlineVisit === 'Yes' || l.leadStatus === 'Admission Taken') && l.connectedOn && l.connectedOn.startsWith(today)).length;
+            const myLeads = getBdaFilteredLeads();
+
+            const connToday = myLeads.filter(l => l.connectedOn && l.connectedOn.startsWith(today)).length;
+            const ddToday = myLeads.filter(l => l.ddDone === 'Yes' && l.connectedOn && l.connectedOn.startsWith(today)).length;
+            const pitchToday = myLeads.filter(l => l.procoursePitch === 'Yes' && l.connectedOn && l.connectedOn.startsWith(today)).length;
+            const visadmToday = myLeads.filter(l => (l.offlineVisit === 'Yes' || l.leadStatus === 'Admission Taken') && l.connectedOn && l.connectedOn.startsWith(today)).length;
 
             document.getElementById('pill-conn').textContent = `📞 Conn: ${connToday}/60`;
             document.getElementById('pill-conn').className = `target-pill ${connToday >= 60 ? 'complete':''}`;
@@ -618,10 +651,11 @@
 
         function renderTabViews() {
             const today = getTodayISTString();
+            const myLeads = getBdaFilteredLeads();
 
             // 1. ACTION REQUIRED
-            const overdue = state.leads.filter(l => l.nextFollowUp && l.nextFollowUp < today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus));
-            const dueToday = state.leads.filter(l => l.nextFollowUp === today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus));
+            const overdue = myLeads.filter(l => l.nextFollowUp && l.nextFollowUp < today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus));
+            const dueToday = myLeads.filter(l => l.nextFollowUp === today && !['Admission Taken','Dead','Not Interested'].includes(l.leadStatus));
             const mustDos = [...overdue, ...dueToday];
 
             document.getElementById('badge-tab-action').textContent = mustDos.length;
@@ -714,16 +748,8 @@
             const search = document.getElementById('search-input').value.toLowerCase().trim();
             const statusF = document.getElementById('status-filter').value;
             const sourceF = document.getElementById('source-filter').value;
-            const bdaF = document.getElementById('bda-filter').value;
 
-            let list = state.leads;
-
-            if (state.activeUser && state.activeUser.role !== 'manager') {
-                const uName = state.activeUser.name.toLowerCase();
-                list = list.filter(l => String(l.bda || '').toLowerCase().includes(uName));
-            } else if (bdaF !== 'ALL') {
-                list = list.filter(l => l.bda === bdaF);
-            }
+            let list = getBdaFilteredLeads();
 
             if (statusF !== 'ALL') {
                 list = list.filter(l => l.leadStatus === statusF || (statusF === 'Not Answering' && String(l.leadStatus).includes('Not Answering')));
@@ -778,22 +804,23 @@
             const tbody = document.getElementById('details-tbody');
             const titleEl = document.getElementById('details-title');
 
+            const myLeads = getBdaFilteredLeads();
             let matched = [];
             let title = "Leads Details";
 
-            if (cardId === 'assigned') { matched = state.leads.filter(l => l.leadStatus === 'Assigned'); title = "Assigned Leads"; }
-            else if (cardId === 'calls') { matched = state.leads.filter(l => l.connectedOn); title = "Recent Contacts"; }
-            else if (cardId === 'connected') { matched = state.leads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)); title = "Connected Leads"; }
-            else if (cardId === 'dd') { matched = state.leads.filter(l => l.ddDone === 'Yes'); title = "DD Done"; }
-            else if (cardId === 'interested') { matched = state.leads.filter(l => l.leadStatus === 'Interested'); title = "Interested Leads"; }
-            else if (cardId === 'followup') { matched = state.leads.filter(l => l.leadStatus === 'Follow Up'); title = "Follow Up Leads"; }
-            else if (cardId === 'admission') { matched = state.leads.filter(l => l.leadStatus === 'Admission Taken'); title = "Admissions Taken"; }
-            else if (cardId === 'needed') { matched = state.leads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)); title = "Admissions Needed (Pipeline)"; }
-            else if (cardId === 'notanswering') { matched = state.leads.filter(l => String(l.leadStatus).includes('Not Answering')); title = "Not Answering Leads"; }
-            else if (cardId === 'dead') { matched = state.leads.filter(l => ['Dead','No Incoming'].includes(l.leadStatus)); title = "Dead Leads"; }
+            if (cardId === 'assigned') { matched = myLeads.filter(l => l.leadStatus === 'Assigned'); title = "Assigned Leads"; }
+            else if (cardId === 'calls') { matched = myLeads.filter(l => l.connectedOn); title = "Recent Contacts"; }
+            else if (cardId === 'connected') { matched = myLeads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)); title = "Connected Leads"; }
+            else if (cardId === 'dd') { matched = myLeads.filter(l => l.ddDone === 'Yes'); title = "DD Done"; }
+            else if (cardId === 'interested') { matched = myLeads.filter(l => l.leadStatus === 'Interested'); title = "Interested Leads"; }
+            else if (cardId === 'followup') { matched = myLeads.filter(l => l.leadStatus === 'Follow Up'); title = "Follow Up Leads"; }
+            else if (cardId === 'admission') { matched = myLeads.filter(l => l.leadStatus === 'Admission Taken'); title = "Admissions Taken"; }
+            else if (cardId === 'needed') { matched = myLeads.filter(l => ['Interested','Follow Up'].includes(l.leadStatus)); title = "Admissions Needed (Pipeline)"; }
+            else if (cardId === 'notanswering') { matched = myLeads.filter(l => String(l.leadStatus).includes('Not Answering')); title = "Not Answering Leads"; }
+            else if (cardId === 'dead') { matched = myLeads.filter(l => ['Dead','No Incoming'].includes(l.leadStatus)); title = "Dead Leads"; }
             else if (cardId === 'prospects-permanent') {
                 const plist = state.prospectsPermanentList || [];
-                matched = state.leads.filter(l => plist.includes(l.id));
+                matched = myLeads.filter(l => plist.includes(l.id));
                 title = "Prospects Permanent List";
             }
 
