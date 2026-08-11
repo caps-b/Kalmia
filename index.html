@@ -3616,6 +3616,13 @@
                         <input type="hidden" id="lead-edit-id">
                         <input type="hidden" id="lead-edit-bda">
                         
+                        <!-- MANAGER SINGLE LEAD REASSIGNMENT DROPDOWN -->
+                        <div class="form-group" id="lead-edit-bda-container" style="display:none; background:rgba(245,158,11,0.08); padding:10px; border-radius:8px; border:1px solid rgba(245,158,11,0.25);">
+                            <label class="form-label" style="color:#fde68a; font-weight:700;">🔄 Assigned BDE (Manager Reassign):</label>
+                            <select class="form-input" id="lead-edit-bda-select" onchange="document.getElementById('lead-edit-bda').value = this.value;" style="font-weight:700; color:var(--text-primary); cursor:pointer;">
+                            </select>
+                        </div>
+                        
                         <div class="form-grid-2">
                             <div class="form-group">
                                 <label class="form-label">Lead Name</label>
@@ -6204,6 +6211,23 @@
             const totalConnected = (counts['Interested'] || 0) + (counts['Follow Up'] || 0);
             const totalDD = leadsList.filter(l => l.ddDone && String(l.ddDone).toLowerCase() === 'yes').length;
 
+            // Calculate admissions needed for current target context
+            let totalAdmCountMonth = 0;
+            leadsList.forEach(l => {
+                if (l.leadStatus === 'Admission Taken') {
+                    totalAdmCountMonth += parseInt(l.admissionCount) || 1;
+                }
+            });
+            let bdaTarget = 15;
+            if (state.activeUser && state.activeUser.name) {
+                bdaTarget = getBdaTarget(state.activeUser.name) || 15;
+            }
+            if (state.activeUser && state.activeUser.role === 'manager') {
+                const bdaCount = (state.bdaRoster && state.bdaRoster.length > 0) ? state.bdaRoster.length : 1;
+                bdaTarget = bdaCount * 15;
+            }
+            const admissionsNeeded = Math.max(0, bdaTarget - totalAdmCountMonth);
+
             // Rebuild Pulse Panel HTML
             const statuses = [
                 { id: 'assigned', label: 'Assigned Leads', count: totalAssigned },
@@ -6213,6 +6237,7 @@
                 { id: 'interested', label: 'Interested', count: counts['Interested'] },
                 { id: 'followup', label: 'Follow Up', count: counts['Follow Up'] },
                 { id: 'admission', label: 'Admission Taken', count: counts['Admission Taken'] },
+                { id: 'needed', label: '🎯 Admissions Needed', count: admissionsNeeded, customTrend: `${totalAdmCountMonth}/${bdaTarget} Done` },
                 { id: 'notanswering', label: 'Not Answering', count: notAnsweringCombined },
                 { id: 'waconnected', label: 'WhatsApp Connected', count: whatsappConnectedCount },
                 { id: 'notinterested', label: 'Not Interested', count: counts['Not Interested'] },
@@ -6226,9 +6251,10 @@
                     <div class="pulse-bottom">
                         <div class="pulse-value">${s.count}</div>
                         <!-- Trend Mockups -->
+                        ${s.customTrend ? `<div class="pulse-trend trend-neutral" style="font-size:10px; font-weight:700; color:var(--accent-warning);">${s.customTrend}</div>` : `
                         <div class="pulse-trend ${s.count > 0 ? 'trend-up' : 'trend-neutral'}">
                             ${s.count > 0 ? '▲' : '─'} ${s.count > 0 ? Math.floor(Math.random() * 3) + 1 : ''}
-                        </div>
+                        </div>`}
                     </div>
                 </div>
             `).join('');
@@ -7611,12 +7637,17 @@
             const form = document.getElementById('lead-editor-form');
             form.reset();
 
+            renderAllLeadSourceDropdowns();
+
             const gcalCheckbox = document.getElementById('lead-edit-gcal-checkbox');
             if (gcalCheckbox) {
                 gcalCheckbox.checked = false;
                 document.getElementById('gcal-time-picker-container').style.display = 'none';
                 document.getElementById('lead-edit-gcal-time').value = '';
             }
+
+            const mgrBdaContainer = document.getElementById('lead-edit-bda-container');
+            const mgrBdaSelect = document.getElementById('lead-edit-bda-select');
  
             if (leadId) {
                 const leadObj = state.leads.find(l => l.id === leadId);
@@ -7625,6 +7656,20 @@
                 document.getElementById('modal-lead-title').textContent = `Edit Lead Info - ${leadObj.name}`;
                 document.getElementById('lead-edit-id').value = leadObj.id;
                 document.getElementById('lead-edit-bda').value = leadObj.bda;
+
+                // Setup Manager BDE Reassign dropdown
+                if (mgrBdaContainer && mgrBdaSelect) {
+                    if (state.activeUser && (state.activeUser.role === 'manager' || state.activeUser.isTeamLead)) {
+                        mgrBdaContainer.style.display = 'block';
+                        let bdaList = (state.bdaRoster && state.bdaRoster.length > 0) ? state.bdaRoster : Object.values(state.passwords).map(p => p.sheetName).filter(Boolean);
+                        bdaList = Array.from(new Set(bdaList));
+                        mgrBdaSelect.innerHTML = bdaList.map(bName => `<option value="${bName}" ${bName === leadObj.bda ? 'selected' : ''}>${bName}</option>`).join('');
+                        mgrBdaSelect.value = leadObj.bda;
+                    } else {
+                        mgrBdaContainer.style.display = 'none';
+                    }
+                }
+
                 document.getElementById('lead-edit-name').value = leadObj.name;
                 document.getElementById('lead-edit-phone').value = leadObj.phoneNumber;
                 document.getElementById('lead-edit-phone').readOnly = true;
@@ -7683,6 +7728,19 @@
                 document.getElementById('modal-lead-title').textContent = "Create New Lead";
                 document.getElementById('lead-edit-id').value = '';
                 document.getElementById('lead-edit-bda').value = state.activeUser.name;
+
+                if (mgrBdaContainer && mgrBdaSelect) {
+                    if (state.activeUser && (state.activeUser.role === 'manager' || state.activeUser.isTeamLead)) {
+                        mgrBdaContainer.style.display = 'block';
+                        let bdaList = (state.bdaRoster && state.bdaRoster.length > 0) ? state.bdaRoster : Object.values(state.passwords).map(p => p.sheetName).filter(Boolean);
+                        bdaList = Array.from(new Set(bdaList));
+                        mgrBdaSelect.innerHTML = bdaList.map(bName => `<option value="${bName}">${bName}</option>`).join('');
+                        mgrBdaSelect.value = state.activeUser.name;
+                    } else {
+                        mgrBdaContainer.style.display = 'none';
+                    }
+                }
+
                 document.getElementById('lead-edit-phone').readOnly = false;
                 document.getElementById('lead-edit-assigned').value = getTodayISTString();
                 document.getElementById('lead-edit-dd').value = 'No';
@@ -7772,6 +7830,9 @@
                     const baseComment = newComment ? `[${timestamp} ${state.activeUser.name}]: ${newComment}` : `[${timestamp} ${state.activeUser.name}]: Status set to ${statusVal}`;
                     const compiledComment = baseComment + metaTag;
                     
+                    const oldBda = targetLeadObj.bda;
+                    const bdaReassigned = oldBda && oldBda !== bdaVal;
+
                     const newRawRow = {
                         id: targetLeadObj.id,
                         assignedDate: assignedVal,
@@ -7789,7 +7850,8 @@
                         dueDate: dueVal,
                         nextFollowUp: followupVal,
                         comments: compiledComment,
-                        bda: bdaVal
+                        bda: bdaVal,
+                        oldBda: bdaReassigned ? oldBda : undefined
                     };
 
                     postPayload = newRawRow;
@@ -7798,6 +7860,7 @@
                     if (!targetLeadObj.history) targetLeadObj.history = [];
                     targetLeadObj.history.push(newRawRow);
                     
+                    targetLeadObj.bda = bdaVal;
                     targetLeadObj.name = nameVal;
                     targetLeadObj.phoneNumber = cleanedPhoneVal;
                     targetLeadObj.leadSource = sourceVal;
@@ -8814,6 +8877,9 @@ function syncCalendarEvent(ss, payload) {
             } else if (cardId === 'admission') {
                 matchedLeads = filteredLeads.filter(l => l.leadStatus === 'Admission Taken');
                 title = "Admissions Taken";
+            } else if (cardId === 'needed') {
+                matchedLeads = filteredLeads.filter(l => ['Interested', 'Follow Up'].includes(l.leadStatus));
+                title = "Admissions Needed (Pipeline Prospects)";
             } else if (cardId === 'noincoming') {
                 matchedLeads = filteredLeads.filter(l => l.leadStatus === 'No Incoming');
                 title = "No Incoming Leads";
