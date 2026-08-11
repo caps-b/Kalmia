@@ -2526,9 +2526,6 @@
                 <button class="btn-submit" onclick="executeAutoLeadRoller()" title="Roll over old leads to today" style="font-size:11px; padding:4px 10px; background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.3); color:#fde68a; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-weight:700;">
                     ⚡ Lead Roller
                 </button>
-                <button class="btn-submit" onclick="executeDissolveUnreachableLeads()" title="Dissolve unreachable leads to Dead" style="font-size:11px; padding:4px 10px; background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.3); color:#fca5a5; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-weight:700;">
-                    🧹 Dissolve Dead
-                </button>
 
                 <button class="logout-btn" onclick="handleLogout()">Log Out</button>
             </div>
@@ -4570,7 +4567,64 @@
             try {
                 todos = JSON.parse(localStorage.getItem(key)) || [];
             } catch(e) {}
+
+            // Auto-populate active lead escalations for Manager & Team Lead into their To-Do list
+            if (state.activeUser && (state.activeUser.role === 'manager' || state.activeUser.isTeamLead) && state.leads) {
+                const isManager = state.activeUser.role === 'manager';
+                const activeUserName = (state.activeUser.name || '').toLowerCase().trim();
+
+                const escalatedLeads = state.leads.filter(l => {
+                    if (!l.escalatedState || l.escalatedState === 'resolved') return false;
+                    if (isManager) return true; // Manager sees all active escalations & SLA breaches
+                    
+                    // Team Lead sees escalations assigned to their TL name or their team
+                    if (l.escalatedTlName && l.escalatedTlName.toLowerCase().trim() === activeUserName) return true;
+                    if (isBdaOwnerMatch(l.bda, activeUserName)) return true;
+                    return false;
+                });
+
+                escalatedLeads.forEach(l => {
+                    const taskId = 'esc_' + l.id;
+                    const existingIdx = todos.findIndex(t => t.id === taskId || t.leadId === l.id);
+                    const isSlaBreach = l.escalatedState === 'auto_escalated_to_manager';
+                    const taskText = `⚠️ Escalation (${isSlaBreach ? 'TL SLA Breach' : 'TL Alert'}): ${l.name} (${l.phoneNumber}) - BDA: ${l.bda}`;
+
+                    if (existingIdx === -1) {
+                        todos.unshift({
+                            id: taskId,
+                            text: taskText,
+                            done: false,
+                            date: getTodayISTString(),
+                            isEscalationTask: true,
+                            leadId: l.id
+                        });
+                    } else {
+                        // Ensure text & lead ID stay updated
+                        todos[existingIdx].text = taskText;
+                        todos[existingIdx].leadId = l.id;
+                        todos[existingIdx].isEscalationTask = true;
+                    }
+                });
+
+                // Mark resolved escalations as done
+                todos.forEach(t => {
+                    if (t.isEscalationTask && t.leadId) {
+                        const matchingLead = state.leads.find(l => l.id === t.leadId);
+                        if (matchingLead && matchingLead.escalatedState === 'resolved') {
+                            t.done = true;
+                        }
+                    }
+                });
+            }
+
             return todos;
+        }
+
+        function updateTodoBadgeCount() {
+            const todos = loadTodoItems();
+            const countActive = todos.filter(t => !t.done).length;
+            const badgeCount = document.getElementById('todo-active-badge-count');
+            if (badgeCount) badgeCount.textContent = countActive > 0 ? countActive : '';
         }
 
         function saveTodoItems(todos) {
@@ -4593,9 +4647,7 @@
             if (filter === 'active') filtered = todos.filter(t => !t.done);
             else if (filter === 'completed') filtered = todos.filter(t => t.done);
             
-            const countActive = todos.filter(t => !t.done).length;
-            const badgeCount = document.getElementById('todo-active-badge-count');
-            if (badgeCount) badgeCount.textContent = countActive > 0 ? countActive : '';
+            updateTodoBadgeCount();
             
             if (filtered.length === 0) {
                 container.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:24px;">No tasks ${filter !== 'all' ? filter : ''} yet. Type a task above to stay organized!</div>`;
@@ -4604,11 +4656,16 @@
             
             container.innerHTML = filtered.map(t => {
                 const realIndex = todos.findIndex(item => item.id === t.id);
+                const isEsc = t.isEscalationTask || (t.id && String(t.id).startsWith('esc_'));
+                const bgStyle = isEsc ? 'rgba(239,68,68,0.1)' : 'var(--bg-secondary)';
+                const borderStyle = isEsc ? 'rgba(239,68,68,0.3)' : 'var(--border-color)';
+                const textColor = t.done ? 'var(--text-muted)' : (isEsc ? '#fca5a5' : 'var(--text-primary)');
+                
                 return `
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:8px; margin-bottom:8px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background:${bgStyle}; border:1px solid ${borderStyle}; border-radius:8px; margin-bottom:8px;">
                         <label style="display:inline-flex; align-items:center; gap:10px; cursor:pointer; flex:1; overflow:hidden;">
                             <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodoTaskStatus(${realIndex})" style="width:16px; height:16px; accent-color:var(--accent-primary); cursor:pointer;">
-                            <span style="font-size:13px; font-weight:${t.done ? '400' : '600'}; color:${t.done ? 'var(--text-muted)' : 'var(--text-primary)'}; text-decoration:${t.done ? 'line-through' : 'none'}; word-break:break-word;">${t.text}</span>
+                            <span style="font-size:13px; font-weight:${t.done ? '400' : '600'}; color:${textColor}; text-decoration:${t.done ? 'line-through' : 'none'}; word-break:break-word;" ${t.leadId ? `onclick="toggleTodoDrawer(false); openLeadModal('${t.leadId}')"` : ''} title="${t.leadId ? 'Click to inspect/resolve escalation lead' : ''}">${t.text}</span>
                         </label>
                         <button onclick="deleteTodoTask(${realIndex})" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:2px 6px;" title="Delete task">✕</button>
                     </div>
@@ -6076,6 +6133,7 @@
 
             // 3. Check and render untouched followups warning banner
             checkUntouchedFollowups();
+            updateTodoBadgeCount();
         }
 
         function isRealBdaContactedLead(l) {
